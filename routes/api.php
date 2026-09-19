@@ -6,9 +6,12 @@ use App\Http\Controllers\Api\Admin\ProductionStepController;
 use App\Http\Controllers\Api\Admin\RefundController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankAccountController;
+use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\CustomerLookupController;
 use App\Http\Controllers\Api\FileController;
+use App\Http\Controllers\Api\MeasurementAccessController;
+use App\Http\Controllers\Api\MeasurementController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderStepController;
@@ -57,6 +60,17 @@ Route::get('/config', [ConfigController::class, 'show']);
 Route::post('/webhooks/flutterwave', PaymentWebhookController::class)
     ->middleware('throttle:120,1')
     ->name('webhooks.flutterwave');
+
+/*
+| Claiming a profile a tailor created for you.
+|
+| Unauthenticated because the whole point is that this person has no account
+| yet. Throttled hard: the code channel is six digits against a phone number,
+| and the only thing standing between that and a million guesses is this
+| limit plus the 48-hour expiry.
+*/
+Route::get('/claim/{token}', [ClaimController::class, 'preview'])->middleware('throttle:20,1');
+Route::post('/claim', [ClaimController::class, 'claim'])->middleware('throttle:8,1');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('/me', [AuthController::class, 'me']);
@@ -107,6 +121,31 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     */
     Route::get('/customers/lookup', CustomerLookupController::class)
         ->middleware('throttle:30,1');
+
+    /*
+    | Measurements.
+    |
+    | Every refusal is 404, never 403 -- the existence of a row here says a
+    | named person has been measured by somebody, which is itself worth not
+    | confirming. MeasurementAccess decides, and FileAccess asks the same
+    | class, so the photograph cannot be reached past the record.
+    */
+    Route::get('/customers/{customer}/measurements', [MeasurementController::class, 'index']);
+    Route::post('/customers/{customer}/measurements', [MeasurementController::class, 'store']);
+    Route::get('/measurements/{measurementSet}', [MeasurementController::class, 'show']);
+    Route::delete('/measurements/{measurementSet}', [MeasurementController::class, 'destroy']);
+
+    /*
+    | Who can see mine. Always the asker's own list; there is no parameter
+    | for whose consents to read.
+    */
+    Route::get('/measurement-access', [MeasurementAccessController::class, 'index']);
+    Route::post('/measurement-access/{link}/revoke', [MeasurementAccessController::class, 'revoke']);
+    Route::post('/measurement-access/{link}/grant', [MeasurementAccessController::class, 'grant']);
+
+    // The tailor's side of the claim flow: QR, WhatsApp link, spoken code.
+    Route::post('/customers/{customer}/claim-invite', [ClaimController::class, 'issue'])
+        ->middleware('throttle:20,1');
 
     /*
     | Orders.

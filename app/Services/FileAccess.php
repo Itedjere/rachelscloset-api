@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\MeasurementSet;
 use App\Models\OrderStep;
 use App\Models\OrderStepPhoto;
 use App\Models\ProductionStep;
 use App\Models\User;
+use App\Services\Measurements\MeasurementAccess;
 
 /**
  * Decides who may open an uploaded file.
@@ -16,17 +18,18 @@ use App\Models\User;
  * A path belonging to no record is refused, which is what makes a guessed path
  * worthless.
  *
- * Measurement books have no owning record yet; they arrive with Section 11,
- * and until then that prefix is listed and refuses. The default is refusal in
- * both directions: an unlisted prefix is refused, and a listed one with no
- * resolver is refused too. A section that forgets to wire its resolver gets a
- * dead 404, not an open door.
+ * Every prefix now resolves to a record. The default stays refusal in both
+ * directions -- an unlisted prefix is refused, and a listed one with no
+ * resolver is refused too -- so a prefix added later without its resolver
+ * gets a dead 404 rather than an open door.
  *
  * Two deliberate breaks from BizyFarmers' version, both about measurements:
  * see ADMIN_RESTRICTED_PREFIXES below.
  */
 class FileAccess
 {
+    public function __construct(private readonly MeasurementAccess $measurements) {}
+
     /** Directories the platform actually writes to. Anything else is refused. */
     public const AVATARS = 'avatars';
 
@@ -128,8 +131,14 @@ class FileAccess
              */
             self::STEP_PHOTOS => $this->isAProofPhotoFor($user, $path),
 
-            // Section 11: her own, or a tailor with consent. See MeasurementAccess.
-            self::MEASUREMENTS => false,
+            /*
+             * Delegated entirely to MeasurementAccess, which is the point.
+             * If this rule were written out again here the two could drift,
+             * and a tailor who cannot open the record would still be able to
+             * stream the photograph by knowing its path -- the whole consent
+             * rule defeated by a URL.
+             */
+            self::MEASUREMENTS => $this->isAMeasurementFor($user, $path),
 
             default => false,
         };
@@ -162,6 +171,20 @@ class FileAccess
                 ->where('customer_id', $user->id)
                 ->orWhere('tailor_id', $user->id))
             ->exists();
+    }
+
+    /**
+     * A measurement photograph this person is allowed to open.
+     *
+     * The set is loaded with its customer because MeasurementAccess asks
+     * whether that profile has been claimed, and an unclaimed one is the case
+     * where the answer is most restrictive.
+     */
+    private function isAMeasurementFor(User $user, string $path): bool
+    {
+        $set = MeasurementSet::query()->with('customer')->where('photo_url', $path)->first();
+
+        return $set !== null && $this->measurements->allows($user, $set);
     }
 
     /** A photograph somebody actually set, rather than a path off the disk. */

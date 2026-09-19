@@ -194,6 +194,42 @@ bad signature, because somebody probing the endpoint is worth seeing.
 `bank_account_name`, `transfer_recipient`, all nullable: a payout stays
 `pending` until they exist rather than failing.
 
+### tailor_customer_links, measurement_sets, measurement_values, claim_tokens
+
+`tailor_customer_links` — `unique(tailor_id, customer_id)`, `status`
+(granted|revoked), `granted_at`, `revoked_at`.
+
+**Consent is per tailor, never global.** One switch reading "share my
+measurements" would mean a customer wanting a second opinion from one tailor
+has handed her file to every tailor on the platform, with no way to tell which
+of them looked. Revoked rows are kept rather than deleted, because "she took
+this back" is a different fact from "this never happened", and keeping it
+makes re-granting one tap.
+
+`measurement_sets` — `customer_id`, `recorded_by`, `photo_url`, `label`,
+`notes`, `taken_on`.
+
+**The photograph is the record**, not a fallback. A tailor writes numbers in a
+paper book with a biro, and asking somebody who reads poorly to transcribe
+twelve of them into labelled boxes produces either wrong numbers or none. A
+set is never edited: a body changes, and last year's numbers are how you know
+by how much, so a new measuring is a new row.
+
+`measurement_values` — `measurement_set_id`, `label`, `value`, `unit`,
+`position`. Optional, for the tailor who does want to type them. `value` is a
+**string**: tailors write "38", "38 1/2" and "38-39", and a decimal column
+turns a working record into a form somebody fails to fill in. `label` is free
+text, not an enum — an agbada needs none of bust/waist/hip.
+
+`claim_tokens` — `user_id`, `token_hash` (unique), `code_hash`, `purpose`
+(claim|pin_reset), `expires_at`, `used_at`, `issued_by`.
+
+**Flagged and agreed in Section 11**, since the plan's data model did not name
+it. Both credentials are stored hashed and returned in plaintext exactly once,
+at issue; six digits is a million guesses, safe only because the endpoint is
+throttled and the row expires in 48 hours. The `purpose` column is there so
+PIN reset reuses this table rather than growing a second parallel mechanism.
+
 ### platform_settings
 `id, key (unique), value, updated_at`
 
@@ -237,8 +273,9 @@ reason, and push is sent inside the request.
 - Follow the data model above exactly. **Flag a new column or table before
   adding it**, then record the outcome here.
 - **Do not add a dependency without asking.** Agreed so far:
-  `minishlink/web-push` (added in Section 2), and `endroid/qr-code` for a later
-  section. Nothing else — including `laravel/boost`.
+  `minishlink/web-push` (Section 2) and `endroid/qr-code` (Section 11, for the
+  claim QR; Section 16 widens it to printed cards). Nothing else — including
+  `laravel/boost`.
 - One section at a time. After each, summarise what was built and what to test
   manually, then stop.
 - Comments explain **why**, not what. The ported code is heavily commented for
@@ -257,7 +294,7 @@ shell, staff roles, settings, suspensions, public Blade site.
 
 **New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
-10 photo proof ✅ · 11 measurements + consent + claim flow · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
+10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
 directory · 16 QR + business card · 17 admin dashboard.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
@@ -393,6 +430,74 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Section 11 — measurements, consent and the claim flow — done
+
+The most sensitive data on the platform, and the flow that turns a profile a
+tailor typed in on the shop floor into somebody's own account. 40 new tests,
+236 total. `endroid/qr-code` installed — the second and last pre-agreed
+dependency.
+
+**`MeasurementAccess` is the whole section.** One ladder, in order: her own
+body; an admin (no — see below); an unclaimed profile, where only the tailor
+who recorded it may look; a tailor with a live order; a tailor with a granted
+link; otherwise no.
+
+- **Every refusal is 404, never 403.** A 403 confirms the row exists, and the
+  existence of a row here says a named person has been measured by somebody.
+- **`FileAccess` takes `MeasurementAccess` as a dependency** rather than
+  restating the rule. If the two could drift, a tailor who cannot open the
+  record could still stream the photograph by knowing its path — the whole
+  consent rule defeated by a URL. Every test asserts both doors at once.
+- **A plain admin gets nothing.** The plan allows a narrow way in —
+  `measurements.view` plus a real dispute — and neither exists: there is no
+  staff permission system, and nothing in any section opens a dispute, though
+  `Order::DISPUTED` is reserved. Until both are built the honest answer is no,
+  which is the safe direction to be wrong in. Section 13 is where disputes
+  would naturally land.
+- **A finished order does not keep granting.** "She was once my customer, so I
+  keep her measurements forever" turns one job into an indefinite claim on
+  somebody's body, and it accumulates without anybody deciding to.
+- **Revoking does not strip a tailor mid-order, and the screen says so.** The
+  cloth is cut and she has the numbers on paper; taking the record away
+  protects nobody and ruins the garment. A control that quietly does less than
+  it claims is worse than no control, so the consent screen prints the caveat
+  only when it is actually true.
+- **The consent screen lists tailors with a live order too**, even where no
+  link exists — a list of only links would be a lie by omission.
+- **Only the customer may delete a set.** Not the tailor who recorded it: a
+  record of somebody's body is hers, and the history is the point.
+
+**The claim flow.** Three channels, all free, two of which send nothing at all,
+because the tailor and customer are standing together: a QR on her screen, a
+`wa.me` deep link from the tailor's own WhatsApp, and six digits read down a
+phone call. The link identifies a row on its own; the code does not, so it is
+only meaningful beside the phone number it was issued for.
+
+- **Claiming grants the inviting tailor a link**, which is the moment the plan
+  calls "cross-tailor history begins when a real person consents". The claim
+  screen says so in as many words *above* the button, and it is one tap to
+  take back from her own screen afterwards.
+- **Re-issuing expires whatever came before.** Two live codes for one account
+  is two chances to guess, and re-issuing means she lost the first anyway.
+- **Claiming signs her in.** Setting a PIN proves who she is as well as typing
+  it into the sign-in form would; `adoptSession` on the web client exists for
+  exactly this and nothing else.
+- **`App\Rules\Pin` applies unchanged**, including the rule against digits
+  taken out of her own phone number — which needs the number, so it is
+  re-validated once the row is resolved.
+
+**A pre-existing 500 fixed on the way through:** Laravel's default for an
+unauthenticated guest is `route('login')`, which does not exist here and never
+will — sign-in is a React page on another origin. Any API request without a
+bearer token *and* without an `Accept: application/json` header threw before
+the JSON handler ran, so it came back 500 instead of 401. Not hypothetical:
+`GET /api/files/{path}` returns a file, which is exactly the kind of URL a
+browser fetches directly. `redirectGuestsTo` now returns null for `api/*`.
+
+**Deferred deliberately:** PIN reset over the same three channels. It is the
+thing that stops a tailor with no email address being locked out forever, and
+`claim_tokens.purpose` is already there for it.
 
 ### Section 10 — photo proof — done
 

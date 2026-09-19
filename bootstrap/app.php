@@ -21,6 +21,22 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureUserHasRole::class,
             'active' => EnsureUserIsActive::class,
         ]);
+
+        /*
+         * There is no `login` route, and there is not going to be: sign-in is
+         * a React page on another origin. Laravel's default for an
+         * unauthenticated guest is route('login'), which throws before the
+         * JSON handler below ever runs -- so any request to an API route
+         * without a bearer token and without an Accept: application/json
+         * header came back as a 500 instead of a 401.
+         *
+         * Not hypothetical. GET /api/files/{path} returns a file, so it is
+         * exactly the kind of URL a browser fetches directly.
+         *
+         * Returning null means no redirect, which leaves the exception
+         * handler to answer 401 the way it already wanted to.
+         */
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
