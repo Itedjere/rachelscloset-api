@@ -28,6 +28,18 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    /*
+     * Web push. Absent these keys, SendPushMessage returns early and the whole
+     * platform still works -- push is a courtesy on top of the in-app record,
+     * never the thing a feature depends on. Generate them with `php artisan
+     * push:vapid`.
+     */
+    'push' => [
+        'subject' => env('VAPID_SUBJECT'),
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

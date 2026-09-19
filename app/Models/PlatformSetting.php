@@ -48,6 +48,31 @@ class PlatformSetting extends Model
     /** How long a suspension runs when an admin does not say otherwise. */
     public const DEFAULT_SUSPENSION_DAYS = 'default_suspension_days';
 
+    /**
+     * How long a notification is kept.
+     *
+     * Two windows, because read and unread mean different things. Something
+     * read is done with -- a fortnight is a generous grace period for going
+     * back to it. Something unread is a message that never landed, so it gets a
+     * month before being given up on.
+     *
+     * Settings rather than constants: the right number is an operational
+     * judgement about a real disk quota, and finding out it is wrong should not
+     * need a deploy.
+     */
+    public const NOTIFICATION_READ_RETENTION_DAYS = 'notification_read_retention_days';
+
+    public const NOTIFICATION_UNREAD_RETENTION_DAYS = 'notification_unread_retention_days';
+
+    /**
+     * When the prune last ran.
+     *
+     * Written by the command itself so a cron that has quietly stopped is
+     * visible on the admin dashboard, rather than being noticed when the
+     * shared host runs out of disk. Nothing reads it to make a decision.
+     */
+    public const NOTIFICATIONS_PRUNED_AT = 'notifications_pruned_at';
+
     public static function get(string $key, mixed $default = null): mixed
     {
         return static::query()->where('key', $key)->value('value') ?? $default;

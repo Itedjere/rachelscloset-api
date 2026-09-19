@@ -56,6 +56,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | Where the React app lives. Notifications carry a path -- /orders/12 --
+    | rather than a whole address, so the same payload renders as an in-app
+    | link, a push target and an email button without three ideas of where the
+    | app is. This is the one place that turns a path into an address.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5174'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Rules\NigerianPhone;
+use App\Support\NotificationCategories;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -53,12 +55,64 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'suspended_until' => 'datetime',
+            'notification_preferences' => 'array',
         ];
     }
 
     public function tailorProfile(): HasOne
     {
         return $this->hasOne(TailorProfile::class);
+    }
+
+    /**
+     * Named `appNotifications` rather than `notifications`, because `Notifiable`
+     * already claims that name for Laravel's own polymorphic table. This one is
+     * the plain table from CLAUDE.md section 4.
+     */
+    public function appNotifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    /** The browsers this person has agreed to receive alerts on. */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
+    /**
+     * Whether this person wants their phone to buzz about a given kind of event.
+     *
+     * Read on the way to sending every notification, off the row that is already
+     * loaded. Anything not explicitly turned off is on: an account that has never
+     * opened its settings hears about everything, and a group that did not exist
+     * when the preferences were saved is not silently muted.
+     */
+    public function wantsPush(string $type): bool
+    {
+        $category = NotificationCategories::for($type);
+
+        // Being told you have been suspended is not something to opt out of.
+        if (! NotificationCategories::isOptional($category)) {
+            return true;
+        }
+
+        return (bool) ($this->notification_preferences[$category] ?? true);
+    }
+
+    /** What the settings page shows, with anything unset filled in as on. */
+    public function pushPreferences(): array
+    {
+        return array_merge(
+            NotificationCategories::defaults(),
+            array_map(
+                fn ($value) => (bool) $value,
+                array_intersect_key(
+                    $this->notification_preferences ?? [],
+                    NotificationCategories::defaults(),
+                ),
+            ),
+        );
     }
 
     public function isCustomer(): bool

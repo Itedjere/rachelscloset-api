@@ -58,6 +58,7 @@ parts of it are ported rather than rewritten.
 - **Payments:** Flutterwave only
 - **Hosting target:** shared hosting. **No queue, no jobs, no worker** — see §5
 - **Repos:** `rachelscloset-api/` and the sibling `rachelscloset-web/`
+  (scaffolded in Section 2; **one** stylesheet, not BizyFarmers' two)
 - **Local ports:** API on **8001**, web on **5174** (BizyFarmers holds 8000/5173)
 
 ---
@@ -130,12 +131,56 @@ whatsapp_phone, avg_rating, orders_completed, timestamps`
 - `avg_rating` and `orders_completed` are denormalised and **recomputed from
   scratch**, never adjusted, so a deleted review cannot leave them drifting.
 
+### notifications
+`id, user_id, type, payload (json), read_at, created_at`
+
+A plain table, not Laravel's polymorphic one: every notification here is
+addressed to exactly one user, so the morph columns would be a constant cost
+paid for a case that never arises. The payload is JSON because the shape differs
+per type and none of it is ever queried — it is read back whole and rendered.
+
+- **`created_at` only.** A notification is never edited.
+- Indexed on `(user_id, read_at)` for the badge and the list, and on
+  `created_at` alone because `notifications:prune` sweeps unread rows by age
+  across all users.
+- It grows fastest of any table here: the step tracker writes a row per stage,
+  so one nine-step garment is nine rows, not one. Hence the prune.
+
+### push_subscriptions
+`id, user_id, endpoint (unique, 500), public_key, auth_token, device_label,
+last_used_at, timestamps`
+
+- **`endpoint` is unique across the table, not per user.** It identifies the
+  browser, and one phone shared between several people is ordinary here — the
+  second person must not start receiving the first person's order alerts.
+- 500 characters because Chrome's FCM endpoints run past 200, and varchar(255)
+  is already at MySQL's comfortable index limit.
+- `device_label` is a guess from the user agent, for telling the shop phone from
+  the one at home when unhooking it. Never identification.
+
+### users.notification_preferences
+`json, nullable`
+
+Which groups a person wants **pushed**. A column rather than a table because it
+is read on the way to sending every alert, when the user row is already loaded.
+Null means "not chosen yet", treated as all on — so a group added in a later
+section is not silently muted for everyone who saved preferences before it
+existed.
+
+BizyFarmers' equivalent governed *email*. Here it governs push, because nothing
+in this project requires an address and most tailors have never had one.
+
 ### platform_settings
 `id, key (unique), value, updated_at`
 
 Seeded with `firstOrCreate`, so re-running never undoes an admin. Keys are
 constants on the model: subscription price monthly/yearly, term lengths, grace
-days, review proof threshold and minimum steps, default suspension days.
+days, review proof threshold and minimum steps, default suspension days,
+notification retention (read/unread) and `notifications_pruned_at`.
+
+`notifications_pruned_at` is written by the prune command and read by nobody to
+make a decision. It exists so a cron that has quietly stopped shows on the admin
+dashboard rather than being discovered when the disk fills.
 
 ---
 
@@ -155,14 +200,21 @@ debit cards. The reminder job is a courtesy; a sign-in banner backs it up.
 The same reasoning already appears in `EnsureUserIsActive`: a fixed-term
 suspension lapses **when the account is next used**, not on a schedule.
 
+`QUEUE_CONNECTION` is therefore **`sync`**, not `database`. The Laravel skeleton
+ships `database`, which would let anything marked `ShouldQueue` land in a table
+nothing drains — silently, which is the worst shape this failure can take.
+`ClosetNotification` deliberately omits the `Queueable` trait for the same
+reason, and push is sent inside the request.
+
 ---
 
 ## 6. Ground rules
 
 - Follow the data model above exactly. **Flag a new column or table before
   adding it**, then record the outcome here.
-- **Do not add a dependency without asking.** One is agreed for a later section:
-  `endroid/qr-code`. Nothing else — including `laravel/boost`.
+- **Do not add a dependency without asking.** Agreed so far:
+  `minishlink/web-push` (added in Section 2), and `endroid/qr-code` for a later
+  section. Nothing else — including `laravel/boost`.
 - One section at a time. After each, summarise what was built and what to test
   manually, then stop.
 - Comments explain **why**, not what. The ported code is heavily commented for
@@ -174,7 +226,7 @@ suspension lapses **when the account is next used**, not on a schedule.
 
 ## 7. Build sections
 
-**Ported from BizyFarmers:** 1 ✅ · 2 notifications + push + prune ·
+**Ported from BizyFarmers:** 1 ✅ · 2 notifications + push + prune ✅ ·
 3 files + `FileAccess` + recorder/player · 4 payments (Flutterwave, sandbox,
 `ConfirmPayment`, webhooks) · 5 orders + escrow + payouts + refunds · 6 admin
 shell, staff roles, settings, suspensions, public Blade site.
@@ -184,6 +236,39 @@ shell, staff roles, settings, suspensions, public Blade site.
 10 photo proof · 11 measurements + consent + claim flow · 12 completion + escrow
 release · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
 directory · 16 QR + business card · 17 admin dashboard.
+
+### Section 2 — done
+
+`notifications` and `push_subscriptions` tables, `users.notification_preferences`.
+`ClosetNotification` (BizyFarmers' `BizyNotification`, renamed, with `Queueable`
+dropped) driving three channels: `AppDatabaseChannel` always, `WebPushChannel`
+and mail on appetite. `SendPushMessage`, `NotificationController`,
+`PushSubscriptionController`, `NotificationCategories`, `notifications:prune` on
+the 03:15 schedule, `push:vapid`, `notifications:test`. 37 new tests, 65 total.
+
+`rachelscloset-web` scaffolded: Vite + React 19 + TS on 5174, `lib/api.ts`,
+`lib/theme.ts`, auth context, `Layout`, `NotificationBell`,
+`usePushNotifications`, `sw.js`, sign-in, the notification list and the alerts
+page. One CSS token set.
+
+Three things worth knowing:
+
+- **The in-app record is not optional and no toggle can erase it.** Preferences
+  govern push (and mail), never `AppDatabaseChannel`. It is the record of what
+  happened to somebody's cloth and money. The alerts page says so in as many
+  words, because it is the thing people assume wrongly about a settings page.
+- **An unmapped notification type falls under `ACCOUNT`, which cannot be muted.**
+  A type somebody forgot to categorise reaches people rather than going quietly
+  missing. `NotificationCategories::MAP` is populated ahead of the sections that
+  will send those types, so the settings page governs something real — **each
+  later section confirms its own type string as it lands.**
+- **Push degrades to nothing, never to an error.** No VAPID keys means
+  `SendPushMessage` returns early and `GET /api/push/config` reports
+  `enabled: false`, so the app hides the prompt rather than offering a button
+  that cannot work.
+
+**Not built yet, and deliberately:** no concrete notification subclasses beyond
+`TestAlert` — those belong to the sections that cause the events.
 
 ### Section 1 — done
 
@@ -200,6 +285,27 @@ suspension history table, no staff roles. Those belong to later sections.
 
 ```
 php artisan serve --port=8001        # in rachelscloset-api
+npm run dev                          # in rachelscloset-web, serves on 5174
+```
+
+Vite proxies `/api` to `127.0.0.1:8001`, so the browser stays on one origin —
+which a service worker needs.
+
+**Web push, locally.** Keys are already in `.env`. Regenerating them silently
+breaks every device already subscribed, which is why `push:vapid` refuses to
+overwrite. On this machine it needs OpenSSL pointed at a config file:
+
+```
+OPENSSL_CONF=C:/Users/itedj/.config/herd/bin/php83/extras/ssl/openssl.cnf php artisan push:vapid
+```
+
+Push works on `localhost` without HTTPS. **It will not work over a LAN address**
+— to test on a real phone, tunnel it, and on an iPhone add the site to the Home
+Screen first, which is the only way Safari allows web push at all.
+
+```
+php artisan notifications:test 08030000003      # sends one harmless alert
+php artisan notifications:prune --dry-run       # counts, deletes nothing
 ```
 
 Seeded accounts, all with PIN **482917**:
@@ -214,8 +320,12 @@ Tests run against the **`rachelscloset_test`** MySQL database, not SQLite — th
 schema uses MySQL enums and there is no SQLite driver on this machine.
 
 ```
-php artisan test
+php artisan test                     # in rachelscloset-api
 ./vendor/bin/pint --test
+```
+```
+npm run typecheck                    # in rachelscloset-web
+npx oxlint src
 ```
 
 **This machine kills dev servers for memory.** It is HP Sure Click

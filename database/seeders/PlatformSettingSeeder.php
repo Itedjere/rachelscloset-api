@@ -21,6 +21,8 @@ class PlatformSettingSeeder extends Seeder
         PlatformSetting::REVIEW_PROOF_THRESHOLD => '80',
         PlatformSetting::REVIEW_PROOF_MIN_STEPS => '3',
         PlatformSetting::DEFAULT_SUSPENSION_DAYS => '14',
+        PlatformSetting::NOTIFICATION_READ_RETENTION_DAYS => '14',
+        PlatformSetting::NOTIFICATION_UNREAD_RETENTION_DAYS => '30',
     ];
 
     public function run(): void
