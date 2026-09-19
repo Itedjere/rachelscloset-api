@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(PlatformSettingSeeder::class);
+        $this->call(StepLibrarySeeder::class);
 
         // Admins cannot sign themselves up, so one has to be seeded.
         User::firstOrCreate(

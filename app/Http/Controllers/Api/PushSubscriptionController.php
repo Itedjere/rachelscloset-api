@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PushSubscription;
-use App\Services\SendPushMessage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,25 +15,6 @@ use Illuminate\Http\Request;
  */
 class PushSubscriptionController extends Controller
 {
-    public function __construct(private readonly SendPushMessage $push) {}
-
-    /**
-     * What the browser needs before it can ask permission.
-     *
-     * The public key is not a secret -- it is handed to every browser that
-     * subscribes. `enabled` being false is how the app knows to hide the whole
-     * prompt rather than offer a button that cannot work.
-     */
-    public function config(): JsonResponse
-    {
-        return response()->json([
-            'data' => [
-                'enabled' => $this->push->configured(),
-                'public_key' => config('services.push.public_key'),
-            ],
-        ]);
-    }
-
     /** Devices this person has hooked up, so they can see and unhook them. */
     public function index(Request $request): JsonResponse
     {

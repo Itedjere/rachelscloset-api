@@ -128,9 +128,9 @@ class PushSubscriptionTest extends TestCase
     {
         config(['services.push.public_key' => null, 'services.push.private_key' => null]);
 
-        $this->getJson('/api/push/config')
+        $this->getJson('/api/config')
             ->assertOk()
-            ->assertJsonPath('data.enabled', false);
+            ->assertJsonPath('data.push.enabled', false);
     }
 
     public function test_the_public_key_is_readable_without_signing_in(): void
@@ -140,10 +140,10 @@ class PushSubscriptionTest extends TestCase
             'services.push.private_key' => 'a-private-key',
         ]);
 
-        $this->getJson('/api/push/config')
+        $this->getJson('/api/config')
             ->assertOk()
-            ->assertJsonPath('data.enabled', true)
-            ->assertJsonPath('data.public_key', 'a-public-key');
+            ->assertJsonPath('data.push.enabled', true)
+            ->assertJsonPath('data.push.public_key', 'a-public-key');
     }
 
     public function test_a_device_label_tells_a_phone_from_a_laptop(): void

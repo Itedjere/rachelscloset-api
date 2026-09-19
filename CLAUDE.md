@@ -58,7 +58,7 @@ parts of it are ported rather than rewritten.
 - **Payments:** Flutterwave only
 - **Hosting target:** shared hosting. **No queue, no jobs, no worker** — see §5
 - **Repos:** `rachelscloset-api/` and the sibling `rachelscloset-web/`
-  (scaffolded in Section 2; **one** stylesheet, not BizyFarmers' two)
+  (scaffolded in Section 2)
 - **Local ports:** API on **8001**, web on **5174** (BizyFarmers holds 8000/5173)
 
 ---
@@ -227,15 +227,103 @@ reason, and push is sent inside the request.
 ## 7. Build sections
 
 **Ported from BizyFarmers:** 1 ✅ · 2 notifications + push + prune ✅ ·
-3 files + `FileAccess` + recorder/player · 4 payments (Flutterwave, sandbox,
+3 files + `FileAccess` + recorder/player ✅ · 4 payments (Flutterwave, sandbox,
 `ConfirmPayment`, webhooks) · 5 orders + escrow + payouts + refunds · 6 admin
 shell, staff roles, settings, suspensions, public Blade site.
 
-**New work:** 7 garment types + admin step library with voice notes ·
-8 templates + arrow reordering · 9 orders assembled from steps, snapshotted ·
+**New work:** 7 garment types + admin step library with voice notes ✅ ·
+8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ·
 10 photo proof · 11 measurements + consent + claim flow · 12 completion + escrow
 release · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
 directory · 16 QR + business card · 17 admin dashboard.
+
+### Sections 7 and 8 — the step library — done
+
+`garment_types`, `production_steps`, `step_templates`, `step_template_items`.
+Admin library screen with the voice recorder from Section 3, the arrangement
+editor with arrows, and a seeded starting library of 10 Nigerian garments and
+13 stages. 21 new tests, 107 total.
+
+- **Steps are a global library; templates bind them per garment.** "Cutting"
+  means the same thing on a gown as on an agbada, and a per-garment library
+  would mean an admin recording the same voice note a dozen times.
+- **One table for both kinds of arrangement**, discriminated by `owner_id`:
+  null is the admin's default, otherwise a tailor's own. Assembling an order
+  asks one question — does she have her own, else the default — and two tables
+  would make that a union for nothing. `StepTemplateController::templateFor()`
+  is the only thing that decides whose arrangement a request may write, so
+  there is no parameter to tamper with.
+- **Ordering is the whole array, PUT.** A move, an insert and a removal are one
+  idempotent request; the server renumbers densely from one. There is no "move
+  up" endpoint, so a retry on a flaky connection cannot corrupt the order.
+- **Arrows, never drag-and-drop**, for the reasons in the plan — and the play
+  button on each row is the point: a tailor arranges the list by listening.
+- **Retire, never delete.** `restrictOnDelete` on the template item's step
+  makes the database enforce it. A retired step cannot be added to anything new
+  but stays put where it already is.
+- **The schema cannot express "one default per garment type"** — MySQL allows
+  any number of rows where part of a unique key is NULL. It is enforced in
+  `StepTemplate::defaultFor()`, the only thing that creates one, and the
+  migration says so rather than pretending otherwise.
+
+**A correction to Section 3's `FileAccess` note:** the step-voice-note resolver
+matches only a step's *current* recording. Replacing one leaves the old file on
+disk but nothing points at it, so it is unreachable — correct today, because
+nothing references an old path yet. **Section 9 must widen that resolver to
+accept any path an `order_step` holds**, or replacing a library recording will
+silence that step for every customer part-way through an order, which is the
+entire reason the old file is kept.
+
+### Section 3 — done
+
+`UploadLimits`, `StoredFile`, `FileController`, `FileAccess`, `ProfileController`
+(name, optional email, avatar), `ConfigController`. On the web: `AudioPlayer`,
+`VoiceNoteRecorder`, `AttachmentView`, `Avatar`, `AvatarUpload`, `useAttachment`,
+`useUploadLimit`, a parameterised `image.ts`, and a profile page. 21 new tests,
+86 total.
+
+**No new tables.** Files are path columns on records later sections own, so
+Section 3 adds none. `users.avatar_url` is the only one resolvable today.
+
+- **Uploads are never reachable by direct URL.** They live on the private disk
+  and stream through `FileController`; `storage:link` is deliberately not used,
+  because symlinks are unreliable on shared hosting and routing every file
+  through one place is what makes access control possible at all. The API
+  therefore returns the *routed* URL (`StoredFile::url()`), never the path.
+- **`FileAccess` refuses in both directions.** An unlisted prefix is refused,
+  and a listed prefix with no resolver is refused too. `step-voice-notes`,
+  `step-photos` and `measurements` are listed and refusing now; Sections 7, 10
+  and 11 replace each resolver as the owning records arrive. A section that
+  forgets gets a dead 404, not an open door.
+- **`ADMIN_RESTRICTED_PREFIXES` exists before any measurement can.** BizyFarmers
+  short-circuits the whole method on `isAdmin()`. Here `measurements` is exempt
+  from that, today, with nothing yet to leak. Relaxing a closed rule in Section
+  11 is a deliberate act; remembering to close an open one eight sections later
+  is not. Tested.
+- **`image.ts` caps by kind, not one number.** 512px for an avatar, **1600px for
+  a document**, at higher JPEG quality — BizyFarmers' single 512 would destroy
+  handwriting on a photographed measurement book, which is the whole point of
+  that record. This is also the downscaling half of the storage policy; the
+  retention half is still open.
+- **An avatar's old file is deleted on replace. A step's voice note must not
+  be.** Orders snapshot the path they were told, so Section 7 replaces by
+  storing a new path and leaving the old file alone. Different rules,
+  deliberately — the comment in `ProfileController` says so.
+
+Three fixes on the way in, all outside the section but all caused by it:
+
+- **`/me` returned `{data}` and the web client read `{user}`** — a Section 2 bug
+  that signed you out on every page reload. Login and `/me` genuinely are
+  different shapes, so they now have two types rather than one hopeful guess.
+- **`/push/config` folded into `/config`**, which now also carries the upload
+  ceiling. Two endpoints answering "what is this server like" was one too many.
+- **`PUT /profile` distinguishes an absent email from a blank one.** Blank means
+  "clear it"; absent means "not talking about it". A partial update must not be
+  able to strip the one recovery route an account has. A test caught this.
+
+**Not built yet, and deliberately:** nothing uploads a voice note or a photo to
+the server — there is no record to attach one to until Section 7. The recorder
+sits on the home page so a microphone can be tested on a real phone first.
 
 ### Section 2 — done
 
@@ -307,6 +395,11 @@ Screen first, which is the only way Safari allows web push at all.
 php artisan notifications:test 08030000003      # sends one harmless alert
 php artisan notifications:prune --dry-run       # counts, deletes nothing
 ```
+
+**Uploads** live in `storage/app/private` and are only reachable through
+`GET /api/files/{path}`. Nothing is served by direct URL, so a browser fetching
+one needs the bearer token — which is why the web client goes through
+`fetchFileObjectUrl` rather than a plain `src=`.
 
 Seeded accounts, all with PIN **482917**:
 

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Support\StoredFile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +19,12 @@ class UserResource extends JsonResource
             'phone' => $this->phone,
             'role' => $this->role,
             'status' => $this->status,
-            'avatar_url' => $this->avatar_url,
+            /*
+             * The routed URL, never the stored path. Uploads live on the
+             * private disk and are only reachable through FileController, so
+             * what the database holds is not something a browser can ask for.
+             */
+            'avatar_url' => StoredFile::url($this->avatar_url),
             'claimed' => $this->isClaimed(),
             'created_at' => $this->created_at,
             'tailor_profile' => $this->whenLoaded('tailorProfile', fn () => [

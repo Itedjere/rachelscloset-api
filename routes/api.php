@@ -1,8 +1,15 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\GarmentTypeController;
+use App\Http\Controllers\Api\Admin\ProductionStepController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ConfigController;
+use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PushSubscriptionController;
+use App\Http\Controllers\Api\StepTemplateController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,11 +31,11 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 /*
-| Public: what the browser needs before it can even offer to turn alerts on.
-| Read before sign-in so the prompt is not offered on an environment that has
-| no VAPID keys and could never deliver.
+| Public: what the app needs to know about this server. The upload ceiling
+| comes from php.ini and the VAPID public key is handed to every browser that
+| subscribes, so none of it is secret and all of it is read before sign-in.
 */
-Route::get('/push/config', [PushSubscriptionController::class, 'config']);
+Route::get('/config', [ConfigController::class, 'show']);
 
 Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('/me', [AuthController::class, 'me']);
@@ -51,6 +58,57 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+
+    /*
+    | Your own account.
+    |
+    | No phone number here -- it is the username, and moving it needs the claim
+    | flow from Section 11 to prove the new one is really hers.
+    */
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
+
+    /*
+    | Uploaded files are streamed through a controller rather than a public
+    | symlink: symlinks are unreliable on shared hosting, and routing every file
+    | through one place is what makes access control possible at all. FileAccess
+    | resolves each path back to the record that owns it.
+    */
+    Route::get('/files/{path}', [FileController::class, 'show'])
+        ->where('path', '.*')
+        ->name('files.show');
+
+    /*
+    | The step library and arrangements.
+    |
+    | Reading is open to any signed-in account: a customer watching her order
+    | needs the same labels and the same recordings the tailor works from.
+    | Writing the library is admin-only; writing an arrangement is scoped to
+    | whoever is asking, inside StepTemplateController.
+    */
+    Route::get('/garment-types', [GarmentTypeController::class, 'index']);
+    Route::get('/steps', [StepTemplateController::class, 'library']);
+    Route::get('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'show']);
+    Route::put('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'update']);
+    Route::delete('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'destroy']);
+
+    Route::prefix('admin')->middleware('role:'.User::ROLE_ADMIN)->group(function (): void {
+        /*
+        | `reorder` is declared before `{garmentType}` so it is not read as a
+        | garment type with the id "reorder".
+        */
+        Route::post('/garment-types', [GarmentTypeController::class, 'store']);
+        Route::put('/garment-types/reorder', [GarmentTypeController::class, 'reorder']);
+        Route::put('/garment-types/{garmentType}', [GarmentTypeController::class, 'update']);
+        Route::post('/garment-types/{garmentType}/retire', [GarmentTypeController::class, 'retire']);
+
+        Route::get('/steps', [ProductionStepController::class, 'index']);
+        Route::post('/steps', [ProductionStepController::class, 'store']);
+        Route::put('/steps/{productionStep}', [ProductionStepController::class, 'update']);
+        Route::post('/steps/{productionStep}/voice-note', [ProductionStepController::class, 'voiceNote']);
+        Route::post('/steps/{productionStep}/retire', [ProductionStepController::class, 'retire']);
+    });
 
     Route::get('/push/subscriptions', [PushSubscriptionController::class, 'index']);
     Route::post('/push/subscriptions', [PushSubscriptionController::class, 'store']);
