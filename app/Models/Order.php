@@ -119,6 +119,18 @@ class Order extends Model
         return $this->hasMany(OrderStep::class)->orderBy('position');
     }
 
+    /**
+     * Every photograph on the order, without going through the steps.
+     *
+     * This is what the denormalised order_id on order_step_photos buys: the
+     * proof ratio, and Section 13's review gate, are one indexed query rather
+     * than a join per decision.
+     */
+    public function stepPhotos(): HasMany
+    {
+        return $this->hasMany(OrderStepPhoto::class);
+    }
+
     public function payout(): HasOne
     {
         return $this->hasOne(Payout::class);

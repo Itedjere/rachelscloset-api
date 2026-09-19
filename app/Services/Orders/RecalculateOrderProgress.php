@@ -3,6 +3,7 @@
 namespace App\Services\Orders;
 
 use App\Models\Order;
+use App\Models\OrderStepPhoto;
 use App\Models\PlatformSetting;
 use App\Notifications\OrderReady;
 
@@ -27,13 +28,24 @@ class RecalculateOrderProgress
         $total = $steps->count();
         $completed = $steps->whereNotNull('completed_at')->count();
 
-        // steps_with_photo is deliberately untouched: Section 10 owns it, and
-        // writing a column back to itself reconciles nothing. It also read
-        // null on a model that had just been created -- the schema default is
-        // on the row, not on the object -- and wrote that straight back.
+        /*
+         * Stages carrying at least one photograph -- stages, not photographs.
+         * Three pictures of the same sleeve is one stage proved, and Section
+         * 13's review gate asks how much of the work was shown, not how many
+         * times the shutter went.
+         *
+         * One indexed query rather than a join, which is what the
+         * denormalised order_id on order_step_photos is for.
+         */
+        $withPhoto = OrderStepPhoto::query()
+            ->where('order_id', $order->id)
+            ->distinct()
+            ->count('order_step_id');
+
         $order->forceFill([
             'steps_total' => $total,
             'steps_completed' => $completed,
+            'steps_with_photo' => $withPhoto,
         ])->save();
 
         if ($total > 0 && $completed === $total && $order->status === Order::IN_PROGRESS) {

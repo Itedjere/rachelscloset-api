@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderStepController;
+use App\Http\Controllers\Api\OrderStepPhotoController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\ProfileController;
@@ -125,6 +126,13 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     */
     Route::get('/orders/{order}/steps', [OrderStepController::class, 'index']);
     Route::put('/orders/{order}/steps/{step}', [OrderStepController::class, 'update']);
+
+    /*
+    | And the proof. Uploading is the tailor's; both sides see the result,
+    | because being shown the work is the point of taking it.
+    */
+    Route::post('/orders/{order}/steps/{step}/photos', [OrderStepPhotoController::class, 'store']);
+    Route::delete('/orders/{order}/steps/{step}/photos/{photo}', [OrderStepPhotoController::class, 'destroy']);
 
     Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm']);
     Route::post('/orders/{order}/release', [OrderController::class, 'release']);

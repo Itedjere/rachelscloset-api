@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\OrderStep;
+use App\Models\OrderStepPhoto;
 use App\Models\ProductionStep;
 use App\Models\User;
 
@@ -15,12 +16,11 @@ use App\Models\User;
  * A path belonging to no record is refused, which is what makes a guessed path
  * worthless.
  *
- * Step photos and measurement books have no owning record yet; they arrive with
- * Sections 10 and 11. Both are listed now and refuse, and the section that
- * creates the records replaces its resolver. The default is refusal in both
- * directions: an unlisted prefix is refused, and a listed one with no resolver
- * is refused too. A section that forgets to wire its resolver gets a dead 404,
- * not an open door.
+ * Measurement books have no owning record yet; they arrive with Section 11,
+ * and until then that prefix is listed and refuses. The default is refusal in
+ * both directions: an unlisted prefix is refused, and a listed one with no
+ * resolver is refused too. A section that forgets to wire its resolver gets a
+ * dead 404, not an open door.
  *
  * Two deliberate breaks from BizyFarmers' version, both about measurements:
  * see ADMIN_RESTRICTED_PREFIXES below.
@@ -114,8 +114,19 @@ class FileAccess
              */
             self::STEP_VOICE_NOTES => $this->isAStepRecording($path),
 
-            // Section 10: the customer and the tailor on the order it proves.
-            self::STEP_PHOTOS => false,
+            /*
+             * The two people on the order it proves, and nobody else.
+             *
+             * Unlike a voice note, which is the same library recording for
+             * everybody, this is a photograph of one customer's cloth on one
+             * tailor's table. A signed-in stranger has no business in it.
+             *
+             * Admins are not excluded here, and that is deliberate: proof of
+             * work is exactly the dispute material BizyFarmers' blanket
+             * admin rule was written for. Measurements remain the exception
+             * -- see ADMIN_RESTRICTED_PREFIXES.
+             */
+            self::STEP_PHOTOS => $this->isAProofPhotoFor($user, $path),
 
             // Section 11: her own, or a tailor with consent. See MeasurementAccess.
             self::MEASUREMENTS => false,
@@ -134,6 +145,23 @@ class FileAccess
     {
         return ProductionStep::query()->where('voice_note_url', $path)->exists()
             || OrderStep::query()->where('voice_note_url', $path)->exists();
+    }
+
+    /**
+     * A proof photograph on an order this person is actually on.
+     *
+     * Resolved to the order rather than to the uploader: the customer never
+     * uploaded it and must still be able to see it, since being shown the
+     * work is the entire point of taking it.
+     */
+    private function isAProofPhotoFor(User $user, string $path): bool
+    {
+        return OrderStepPhoto::query()
+            ->where('path', $path)
+            ->whereHas('order', fn ($order) => $order
+                ->where('customer_id', $user->id)
+                ->orWhere('tailor_id', $user->id))
+            ->exists();
     }
 
     /** A photograph somebody actually set, rather than a path off the disk. */

@@ -69,7 +69,10 @@ class OrderController extends Controller
     {
         return response()->json([
             'data' => OrderResource::make(
-                $order->load(['customer', 'tailor', 'garmentType', 'payments', 'payout']),
+                // Steps and their photographs too: an admin deciding a refund
+                // is deciding what the work was worth, and "what was paid" is
+                // only half of that question.
+                $order->load(['customer', 'tailor', 'garmentType', 'payments', 'payout', 'steps.photos']),
             )->resolve($request),
         ]);
     }

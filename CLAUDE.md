@@ -257,7 +257,7 @@ shell, staff roles, settings, suspensions, public Blade site.
 
 **New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
-10 photo proof · 11 measurements + consent + claim flow · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
+10 photo proof ✅ · 11 measurements + consent + claim flow · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
 directory · 16 QR + business card · 17 admin dashboard.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
@@ -393,6 +393,53 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Section 10 — photo proof — done
+
+`order_step_photos`, a camera button on every tracker row, and the counter
+Section 13's review gate will read. 15 new tests, 196 total.
+
+- **`order_id` is denormalised onto the photo**, as the plan specifies. The
+  proof ratio is "how much of this order's work was shown", and without the
+  column that is a join through `order_steps` on every review decision and
+  every order page. Nothing but the controller writes a row and it copies the
+  value off the step it was handed, so the two cannot disagree.
+- **`steps_with_photo` counts stages, not photographs.** Three pictures of the
+  same sleeve is one stage proved. Recomputed from scratch by
+  `RecalculateOrderProgress` like the other two counters — deleting one of two
+  photographs on a stage correctly leaves that stage still proved.
+- **Only the two people on the order may look.** Unlike a library voice note,
+  which is the same recording for everybody, this is one customer's cloth on
+  one tailor's table, so `FileAccess` resolves the path to the order rather
+  than to the uploader — the customer never uploaded it and must still see it.
+  Admins are deliberately *not* excluded: proof of work is exactly the dispute
+  material BizyFarmers' blanket admin rule was written for. Measurements
+  remain the only exception.
+- **Proof can be withdrawn while the work is happening, and not after.** The
+  same window in which she may tick a stage off. A blurred picture of the
+  wrong sleeve is an ordinary mistake; a photograph removed after the customer
+  has the garment is evidence leaving a record she may be about to review.
+- **Three photographs per stage, capped.** Storage is a real limit here, not a
+  theoretical one — the plan puts a thousand orders at roughly 3GB against a
+  shared-hosting quota. The cap plus the existing 1600px downscale in
+  `image.ts` is the storage policy the plan asked to be decided before launch.
+- **HEIC is not accepted.** Browsers cannot display it, and a photograph
+  nobody can open is not proof of anything.
+- **The camera opens, not a file picker** — `capture="environment"` on the
+  input. The work and the phone are in the same hands, and navigating a file
+  system is the kind of reading this platform exists to avoid.
+- **No notification per photograph.** The stage-completed notice already
+  fires, and `notifications:prune` exists because this table grows fastest of
+  any; a second row per stage would double the noise to say something she can
+  already see.
+
+`OrderStepResource` now shapes a step in one place. Section 9 had that shape
+duplicated between the tracker endpoint and the order resource, which was
+survivable at six identical lines and stopped being so the moment photographs
+had to appear in both.
+
+**A gap this closed:** `steps_with_photo` was never exposed by `OrderResource`
+at all — Section 9 had nothing to put in it, so nothing noticed.
 
 ### Section 9 — the tracker — done
 

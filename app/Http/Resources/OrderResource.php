@@ -34,6 +34,9 @@ class OrderResource extends JsonResource
             // Section 9 writes these. Zero until then.
             'steps_total' => $this->steps_total,
             'steps_completed' => $this->steps_completed,
+            // How much of the work was actually shown. Section 13's review
+            // gate reads this; the order page shows it to both sides.
+            'steps_with_photo' => $this->steps_with_photo,
 
             // Whether the tailor may release escrow herself yet. Computed
             // from collected_at, so it is true the moment it is true.
@@ -52,17 +55,10 @@ class OrderResource extends JsonResource
              * a part payment followed by silence looks very different from
              * one clean settlement.
              */
-            'steps' => $this->whenLoaded('steps', fn () => $this->steps
-                ->map(fn ($step) => [
-                    'id' => $step->id,
-                    'position' => $step->position,
-                    // The snapshot the customer was shown, never the library.
-                    'label' => $step->label,
-                    'instructions' => $step->instructions,
-                    'voice_note_url' => StoredFile::url($step->voice_note_url),
-                    'complete' => $step->isComplete(),
-                    'completed_at' => $step->completed_at,
-                ])->values()),
+            'steps' => $this->whenLoaded(
+                'steps',
+                fn () => OrderStepResource::collection($this->steps),
+            ),
 
             'payments' => $this->whenLoaded('payments', fn () => $this->payments
                 ->map(fn ($payment) => [

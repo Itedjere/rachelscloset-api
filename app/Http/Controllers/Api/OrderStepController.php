@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderStepResource;
 use App\Models\Order;
 use App\Models\OrderStep;
 use App\Notifications\StepCompleted;
 use App\Services\Orders\RecalculateOrderProgress;
-use App\Support\StoredFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -90,15 +90,8 @@ class OrderStepController extends Controller
 
     private function shapeAll(Order $order): array
     {
-        return $order->steps()->get()->map(fn (OrderStep $step) => [
-            'id' => $step->id,
-            'position' => $step->position,
-            // The snapshot, always. Never the library.
-            'label' => $step->label,
-            'instructions' => $step->instructions,
-            'voice_note_url' => StoredFile::url($step->voice_note_url),
-            'complete' => $step->isComplete(),
-            'completed_at' => $step->completed_at,
-        ])->values()->all();
+        return OrderStepResource::collection(
+            $order->steps()->with('photos')->get(),
+        )->resolve();
     }
 }

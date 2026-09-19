@@ -55,7 +55,7 @@ class OrderController extends Controller
 
         return response()->json([
             'data' => OrderResource::make(
-                $order->load(['customer', 'tailor', 'garmentType', 'payments', 'payout', 'steps']),
+                $order->load(['customer', 'tailor', 'garmentType', 'payments', 'payout', 'steps.photos']),
             )->resolve($request),
         ]);
     }
@@ -97,7 +97,7 @@ class OrderController extends Controller
 
         return response()->json([
             'data' => OrderResource::make(
-                $order->fresh()->load(['customer', 'tailor', 'garmentType', 'steps']),
+                $order->fresh()->load(['customer', 'tailor', 'garmentType', 'steps.photos']),
             )->resolve($request),
         ], 201);
     }
@@ -207,7 +207,7 @@ class OrderController extends Controller
     {
         return response()->json([
             'data' => OrderResource::make(
-                $order->fresh()->load(['customer', 'tailor', 'garmentType', 'payout', 'steps']),
+                $order->fresh()->load(['customer', 'tailor', 'garmentType', 'payout', 'steps.photos']),
             )->resolve($request),
         ]);
     }
