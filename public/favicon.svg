@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Rachel's Closet">
+  <!--
+    The mark. An interlocking RC in Zilla Slab, the face the wordmark is set in.
+
+    The C is locked through the R: it passes BEHIND the R's bowl at the top and
+    IN FRONT of its leg at the bottom. That alternation is the whole trick –
+    two letters that merely overlap read as one sitting on the other, and it is
+    only the change of order at the second crossing that makes them look woven.
+    Mechanically it is the C drawn twice, the second time clipped to the lower
+    crossing so it comes out on top there and nowhere else.
+
+    Both letters are outlined paths, not live text, so this renders identically
+    with no webfont, no network and no font stack to negotiate: as a favicon, in
+    an email, at the centre of a printed QR code, on a machine that has never
+    heard of Zilla Slab.
+
+    Geometry is on a 64 grid and is mirrored exactly by app/Console/Commands/
+    BuildBrandAssets.php, which renders the .ico and the app icons. Change one,
+    run `php artisan brand:build`.
+  -->
+  <defs>
+    <clipPath id="rc-lock">
+      <!-- The lower crossing, and only that. -->
+      <rect x="26" y="32" width="38" height="32"/>
+    </clipPath>
+  </defs>
+
+  <rect width="64" height="64" rx="15" fill="#8257bd"/>
+
+  <path d="M53.49 35.77L52.89 42.84Q51.41 44.46 48.14 45.48Q44.88 46.50 41.64 46.50L41.64 46.50Q35.21 46.50 30.86 42.36Q26.51 38.22 26.51 31.51L26.51 31.51Q26.51 27.99 27.99 24.29Q29.47 20.59 32.85 18.04Q36.23 15.50 41.92 15.50L41.92 15.50Q45.76 15.50 48.54 16.63Q51.31 17.77 52.75 19.11L52.75 19.11L53.49 26.10L48.44 26.56L47.80 22.58Q46.59 21.79 44.88 21.38Q43.17 20.96 41.64 20.96L41.64 20.96Q37.76 20.96 35.47 23.55Q33.18 26.14 33.18 31.09L33.18 31.09Q33.18 36.32 35.67 38.68Q38.17 41.04 42.06 41.04L42.06 41.04Q45.71 41.04 47.80 39.79L47.80 39.79L48.44 35.30L53.49 35.77Z" fill="#e2cda0"/>
+  <path d="M38.50 41.06L38.50 46.50L30.58 46.50L24.43 34.67L20.23 34.67L20.23 41.06L23.57 41.06L23.57 46.50L10.50 46.50L10.50 41.06L13.84 41.06L13.84 20.94L10.50 20.94L10.50 15.50L24.52 15.50Q30.29 15.50 33.39 17.86Q36.49 20.22 36.49 24.90L36.49 24.90Q36.49 28.04 34.87 30.17Q33.25 32.29 30.58 33.34L30.58 33.34L34.78 41.06L38.50 41.06ZM29.63 25.04L29.63 25.04Q29.63 22.70 28.24 21.82Q26.86 20.94 23.38 20.94L23.38 20.94L20.23 20.94L20.23 29.62L23.28 29.62Q26.96 29.62 28.29 28.42Q29.63 27.23 29.63 25.04Z" fill="#fcfaff"/>
+  <g clip-path="url(#rc-lock)"><path d="M53.49 35.77L52.89 42.84Q51.41 44.46 48.14 45.48Q44.88 46.50 41.64 46.50L41.64 46.50Q35.21 46.50 30.86 42.36Q26.51 38.22 26.51 31.51L26.51 31.51Q26.51 27.99 27.99 24.29Q29.47 20.59 32.85 18.04Q36.23 15.50 41.92 15.50L41.92 15.50Q45.76 15.50 48.54 16.63Q51.31 17.77 52.75 19.11L52.75 19.11L53.49 26.10L48.44 26.56L47.80 22.58Q46.59 21.79 44.88 21.38Q43.17 20.96 41.64 20.96L41.64 20.96Q37.76 20.96 35.47 23.55Q33.18 26.14 33.18 31.09L33.18 31.09Q33.18 36.32 35.67 38.68Q38.17 41.04 42.06 41.04L42.06 41.04Q45.71 41.04 47.80 39.79L47.80 39.79L48.44 35.30L53.49 35.77Z" fill="#e2cda0"/></g>
+</svg>

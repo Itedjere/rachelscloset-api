@@ -1,0 +1,749 @@
+/*
+ * Rachel's Closet — the design language.
+ * ============================================================================
+ *
+ * CANONICAL COPY. The React app carries a mirror of the :root token blocks in
+ * rachelscloset-web/src/styles/app.css. If you change a colour here, change it
+ * there. They are deliberately duplicated rather than shared through a build
+ * step: the two repos deploy separately, and a broken import between them would
+ * take down a public page that a printed QR code points at.
+ *
+ * Framework-neutral on purpose. Blade uses it for the public site; the React
+ * app uses the tokens. Nothing in this file knows about either.
+ *
+ * ZERO DEPENDENCIES. The reference template this was measured against loads
+ * jQuery, Bootstrap, Swiper, GSAP + ScrollTrigger + SplitText, WOW, Isotope,
+ * Parallaxie, magnific-popup and eight more -- 1.12MB before a single image.
+ * Every effect below is native CSS or ~200 lines of vanilla JS, because the
+ * people using this platform pay for bandwidth by the megabyte.
+ */
+
+/* ===========================================================================
+   1. Tokens
+   =========================================================================== */
+
+:root {
+  /* --- Ground: everything carries a faint violet cast, so lilac sits in it
+         rather than on it ----------------------------------------------- */
+  --bone: #fcfaff;
+  --cream: #f2ecf8;
+  --surface: #ffffff;
+  --surface-2: #f7f2fb;
+  --line: #e6dced;
+  --line-strong: #cfc0dc;
+
+  /* --- Ink --------------------------------------------------------------- */
+  --ink: #1e1726;
+  --ink-soft: #574c63;
+  --ink-mute: #877b93;
+
+  /*
+   * Two different jobs that a single "invert" token was doing badly.
+   *
+   * --on-dark is text sitting on a surface that is dark in BOTH themes: the
+   * hero, the marquee band, the call to action, the footer, a photo caption
+   * over a scrim. It must never flip, or those panels end up dark on dark.
+   *
+   * --ink-invert is text on a filled control, which genuinely does flip --
+   * white on the deep lilac of a light-theme button, near-black on the pale
+   * lilac of a dark-theme one.
+   */
+  --on-dark: #fcfaff;
+  --ink-invert: #fcfaff;
+
+  /* --- Lilac: the house colour ------------------------------------------
+   *
+   * True lilac (#c8a2c8 and thereabouts) is too pale to carry white text or
+   * to pass as a link colour, so the working token is a lilac taken down to
+   * 5.2:1 against white -- readable both as text and behind white text. The
+   * pale one lives in --lilac-bright, for decoration only.
+   */
+  --lilac: #8257bd;
+  --lilac-bright: #b28ce0;
+  --violet-deep: #4a2d78;
+  --violet-ink: #251540;
+  --lilac-tint: #f3edfa;
+
+  /* --- Champagne: the warm counterweight --------------------------------
+   *
+   * 3.1:1 on white. Decorative only -- eyebrows, rules, counters, hover
+   * wipes -- and never body text. That restraint is what keeps it reading
+   * as a metal rather than as a colour.
+   */
+  --champagne: #b08d4e;
+  --champagne-soft: #e2cda0;
+  --champagne-tint: #faf4e8;
+
+  --success: #2e7d3c;
+  --danger: #c0392f;
+
+  /* --- Type -------------------------------------------------------------
+   *
+   * Zilla Slab for display, Monda for everything else. A slab serif gives
+   * the headings weight and a little warmth without the fragility of a
+   * high-contrast didone -- which matters on a cheap screen, where hairline
+   * strokes simply disappear.
+   */
+  --font-display: "Zilla Slab", Georgia, "Times New Roman", serif;
+  --font-body: "Monda", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Fluid, so nothing needs a breakpoint to stay in proportion. */
+  --fs-display: clamp(2.25rem, 6.5vw, 5rem);
+  --fs-h1: clamp(1.875rem, 4.5vw, 3.25rem);
+  --fs-h2: clamp(1.75rem, 4vw, 2.75rem);
+  --fs-h3: clamp(1.25rem, 2.4vw, 1.625rem);
+  --fs-lead: clamp(1.0625rem, 1.6vw, 1.3125rem);
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-eyebrow: 0.75rem;
+
+  --tracking-eyebrow: 0.2em;
+  /* Slabs want far less negative tracking than a didone -- the serifs already
+     do the work of closing the gaps, and tightening further jams them. */
+  --tracking-display: -0.012em;
+
+  /* --- Space: a 4px base, named so a page reads consistently -------------- */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-12: 3rem;
+  --s-16: 4rem;
+  --s-24: 6rem;
+  --s-32: 8rem;
+  --section: clamp(4rem, 10vw, 9rem);
+
+  --radius: 4px;
+  --radius-lg: 10px;
+  --measure: 62ch;
+  --wrap: 1240px;
+  --wrap-narrow: 760px;
+
+  /* --- Shadow: tinted violet, never a grey box drop ----------------------- */
+  --shadow-sm: 0 1px 2px rgba(37, 21, 64, 0.06);
+  --shadow: 0 2px 4px rgba(37, 21, 64, 0.04), 0 12px 32px rgba(37, 21, 64, 0.09);
+  --shadow-lift: 0 4px 8px rgba(37, 21, 64, 0.07), 0 24px 56px rgba(37, 21, 64, 0.16);
+
+  /* --- Motion ------------------------------------------------------------ */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 180ms;
+  --dur: 520ms;
+  --dur-slow: 900ms;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bone: #141019;
+  --cream: #1c1626;
+  --surface: #1c1626;
+  --surface-2: #251d31;
+  --line: #332a42;
+  --line-strong: #4a3d5c;
+
+  --ink: #f4f0f8;
+  --ink-soft: #c0b6cc;
+  --ink-mute: #8c8199;
+  --on-dark: #fcfaff;
+  --ink-invert: #141019;
+
+  /* Inverted: on a dark ground the pale lilac is the readable one, so the
+     two swap roles rather than the palette simply being darkened. */
+  --lilac: #c2a0ea;
+  --lilac-bright: #dcc6f7;
+  --lilac-tint: #2c1f3d;
+
+  /*
+   * These two do NOT invert. Despite the names they are surfaces, not inks:
+   * the hero, the marquee band, the call to action and the footer are dark
+   * violet in both themes by design. Flipping them with everything else turned
+   * all four near-white and made the hero look like an empty block. Lifted a
+   * little off the light-theme values so they still read as distinct panels
+   * against the darker page ground.
+   */
+  --violet-deep: #2b1a49;
+  --violet-ink: #1c1230;
+
+  --champagne: #dbbd7f;
+  --champagne-soft: #eeddb4;
+  --champagne-tint: #2e2617;
+
+  --success: #6bc97c;
+  --danger: #ef7d73;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 4px 8px rgba(0, 0, 0, 0.35), 0 24px 56px rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
+}
+
+/* ===========================================================================
+   2. Reset and base
+   =========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Anchors land below the fixed masthead rather than under it. */
+  scroll-padding-top: 5rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bone);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Every reveal animation starts off-screen to the side or below; without
+     this a phone gets a horizontal scrollbar for the length of the animation. */
+  overflow-x: hidden;
+}
+
+img,
+picture,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+/*
+ * The browser's own stylesheet gives <figure> `margin: 1em 40px`, and <blockquote>
+ * much the same. Eighty pixels of inherited side margin is invisible in a wide
+ * layout and ruinous in a narrow one: it was taking a third of the width off
+ * every testimonial card on a phone, which read as the card being too narrow
+ * rather than as a margin nobody set.
+ */
+figure,
+blockquote {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+[data-theme="dark"] :focus-visible {
+  outline-color: var(--champagne-soft);
+}
+
+::selection {
+  background: var(--lilac);
+  color: var(--ink-invert);
+}
+
+/* ===========================================================================
+   3. Typography
+   =========================================================================== */
+
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: var(--tracking-display);
+  margin: 0;
+}
+
+.display {
+  font-size: var(--fs-display);
+}
+
+h1 {
+  font-size: var(--fs-h1);
+}
+
+h2 {
+  font-size: var(--fs-h2);
+}
+
+h3 {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+p {
+  margin: 0 0 var(--s-4);
+  max-width: var(--measure);
+}
+
+/*
+ * The small letterspaced label above a heading. Does a lot of work on a page
+ * like this: it gives the eye somewhere to land before the big type, and it is
+ * where the champagne is allowed to appear.
+ */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--champagne);
+  margin: 0 0 var(--s-4);
+}
+
+.eyebrow.on-dark {
+  color: var(--champagne-soft);
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* An italic slab phrase inside a heading. The one flourish, used sparingly. */
+.accent {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--lilac);
+}
+
+[data-theme="dark"] .accent {
+  color: var(--champagne-soft);
+}
+
+.rule {
+  width: 56px;
+  height: 1px;
+  border: 0;
+  margin: var(--s-6) 0;
+  background: var(--champagne);
+}
+
+/* ===========================================================================
+   4. Layout
+   =========================================================================== */
+
+.wrap {
+  width: 100%;
+  max-width: var(--wrap);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 3rem);
+}
+
+.wrap-narrow {
+  max-width: var(--wrap-narrow);
+}
+
+.section {
+  padding-block: var(--section);
+}
+
+.section.tight {
+  padding-block: calc(var(--section) * 0.55);
+}
+
+.section.on-violet {
+  background: var(--violet-deep);
+  color: var(--on-dark);
+}
+
+.section.on-violet .lead,
+.section.on-violet p {
+  color: rgba(251, 249, 247, 0.78);
+}
+
+.section.on-cream {
+  background: var(--cream);
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+@media (max-width: 860px) {
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section-head {
+  max-width: 44ch;
+  margin-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+
+.section-head.centred {
+  margin-inline: auto;
+  text-align: center;
+}
+
+/* ===========================================================================
+   5. Buttons
+   =========================================================================== */
+
+.btn {
+  --btn-bg: var(--lilac);
+  --btn-fg: var(--ink-invert);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  /* 48px minimum. Tapped by a thumb in a busy shop, not clicked by a mouse. */
+  min-height: 48px;
+  padding-inline: var(--s-8);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.btn > span {
+  position: relative;
+  z-index: 1;
+}
+
+/* A gold wipe from the bottom, rather than a colour swap. Costs one pseudo
+   element and reads as considered rather than as a default hover state. */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--champagne);
+  transform: translateY(101%);
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.btn:hover::after,
+.btn:focus-visible::after {
+  transform: translateY(0);
+}
+
+.btn:hover {
+  color: var(--violet-ink);
+  box-shadow: var(--shadow);
+}
+
+.btn.ghost {
+  --btn-bg: transparent;
+  --btn-fg: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.btn.ghost.on-dark {
+  --btn-fg: var(--on-dark);
+  border-color: rgba(251, 249, 247, 0.35);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+/* A text link that draws its own underline on hover, left to right. */
+.link {
+  position: relative;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lilac);
+}
+
+.section.on-violet .link {
+  color: var(--champagne-soft);
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.link:hover::after,
+.link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ===========================================================================
+   6. Photographs
+   =========================================================================== */
+
+/*
+ * The frame reserves its space from an aspect-ratio before the image loads, so
+ * nothing on the page jumps when a photograph arrives. On a slow connection
+ * that shift is the difference between a page that feels built and one that
+ * feels broken.
+ */
+.frame {
+  position: relative;
+  overflow: hidden;
+  background: var(--cream);
+  border-radius: var(--radius);
+}
+
+.frame > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Faded in by motion.js once decoded, so a half-painted image never shows. */
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+.frame > img.is-loaded {
+  opacity: 1;
+}
+
+.frame.portrait {
+  aspect-ratio: 4 / 5;
+}
+
+.frame.tall {
+  aspect-ratio: 3 / 4;
+}
+
+.frame.square {
+  aspect-ratio: 1;
+}
+
+.frame.landscape {
+  aspect-ratio: 3 / 2;
+}
+
+/* A slow scale on hover. The image moves, the frame does not. */
+.frame.zoom > img {
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform 1.2s var(--ease-out);
+}
+
+.frame.zoom:hover > img {
+  transform: scale(1.06);
+}
+
+/* ===========================================================================
+   7. Motion primitives
+   =========================================================================== */
+
+/*
+ * Everything below is driven by one IntersectionObserver in motion.js, which
+ * adds .is-in when an element first enters the viewport. Nothing is animated
+ * on scroll position except .parallax, which is the only thing that needs to
+ * be -- and that runs inside a single requestAnimationFrame.
+ */
+
+[data-reveal] {
+  opacity: 0;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal="up"] {
+  transform: translateY(2.5rem);
+}
+
+[data-reveal="left"] {
+  transform: translateX(-2.5rem);
+}
+
+[data-reveal="right"] {
+  transform: translateX(2.5rem);
+}
+
+[data-reveal="scale"] {
+  transform: scale(0.94);
+}
+
+/* A photograph uncovered by a violet panel sliding away. The most "fashion" of
+   these, so it is reserved for hero and section-opening images. */
+[data-reveal="curtain"] {
+  opacity: 1;
+}
+
+[data-reveal="curtain"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--violet-deep);
+  transform: translateX(0);
+  transition: transform 1.1s var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+[data-reveal="curtain"].is-in::after {
+  transform: translateX(101%);
+}
+
+/* --- Split text --------------------------------------------------------- */
+
+/* motion.js wraps each word in a span. The words rise out of a clipping mask,
+   staggered -- the effect GSAP's SplitText is usually bought for, in CSS. */
+.split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* Room for a didone's descenders, which a tight mask would shear off. */
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.split-word > span {
+  display: inline-block;
+  transform: translateY(105%);
+  transition: transform 1s var(--ease-out);
+  transition-delay: calc(var(--word-index, 0) * 55ms + var(--reveal-delay, 0ms));
+}
+
+.is-in .split-word > span,
+.split-word.is-in > span {
+  transform: translateY(0);
+}
+
+/* --- Parallax ------------------------------------------------------------ */
+
+.parallax {
+  will-change: transform;
+}
+
+/* --- Marquee ------------------------------------------------------------- */
+
+.marquee {
+  display: flex;
+  overflow: hidden;
+  user-select: none;
+  gap: var(--s-8);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marquee__track {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--s-8);
+  min-width: 100%;
+  padding-right: var(--s-8);
+  animation: marquee 38s linear infinite;
+}
+
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* --- Counters ------------------------------------------------------------ */
+
+.counter {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===========================================================================
+   8. Reduced motion
+   =========================================================================== */
+
+/*
+ * Not an accessibility checkbox. On the phones this platform is actually used
+ * on, a page animating six things at once judders -- so the people most likely
+ * to turn this on are the ones whose hardware most needs it.
+ *
+ * Everything still arrives; it simply arrives already in place.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-reveal="curtain"]::after {
+    display: none;
+  }
+
+  .split-word > span {
+    transform: none;
+  }
+
+  .parallax {
+    transform: none !important;
+  }
+
+  .frame > img {
+    opacity: 1;
+  }
+}

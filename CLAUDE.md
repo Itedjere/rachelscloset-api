@@ -52,13 +52,14 @@ Same as BizyFarmers, deliberately — it is proven on the same hosting, and larg
 parts of it are ported rather than rewritten.
 
 - **Backend:** Laravel 13, PHP 8.3, Eloquent, MySQL 8
-- **Frontend:** React 19 + TypeScript + Vite, plain CSS design system
-  (no Tailwind, no component library, no state library)
+- **Frontend:** React 19 + TypeScript + Vite for the signed-in app; **Blade for
+  the public site**. Plain CSS design system, no Tailwind, no component library,
+  no state library, **no animation or carousel library**
 - **Auth:** Sanctum in **bearer-token mode**, not SPA cookie sessions
 - **Payments:** Flutterwave only
 - **Hosting target:** shared hosting. **No queue, no jobs, no worker** — see §5
 - **Repos:** `rachelscloset-api/` and the sibling `rachelscloset-web/`
-  (scaffolded in Section 2)
+  (scaffolded in Section 2; **one** stylesheet, not BizyFarmers' two)
 - **Local ports:** API on **8001**, web on **5174** (BizyFarmers holds 8000/5173)
 
 ---
@@ -231,11 +232,12 @@ reason, and push is sent inside the request.
 `ConfirmPayment`, webhooks) · 5 orders + escrow + payouts + refunds · 6 admin
 shell, staff roles, settings, suspensions, public Blade site.
 
-**New work:** 7 garment types + admin step library with voice notes ✅ ·
-8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ·
-10 photo proof · 11 measurements + consent + claim flow · 12 completion + escrow
-release · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
-directory · 16 QR + business card · 17 admin dashboard.
+**New work:** 3.5 design language ✅ · 7 garment types + admin step library with
+voice notes ✅ · 8 templates + arrow reordering ✅ · 9 orders assembled from
+steps, snapshotted · 10 photo proof · 11 measurements + consent + claim flow ·
+12 completion + escrow release · 13 two-way reviews + proof gate ·
+14 subscriptions · 15 Fashion House directory · 16 QR + business card ·
+17 admin dashboard.
 
 ### Sections 7 and 8 — the step library — done
 
@@ -273,6 +275,137 @@ nothing references an old path yet. **Section 9 must widen that resolver to
 accept any path an `order_step` holds**, or replacing a library recording will
 silence that step for every customer part-way through an order, which is the
 entire reason the old file is kept.
+
+### Section 3.5 — the design language — done
+
+Sits between 3 and 4 because the alternative was retrofitting it across twenty
+pages later. Reference the product owner gave: `html.awaikenthemes.com/ellora`.
+
+`public/css/design-system.css` (tokens, type, motion primitives),
+`public/css/public.css`, `public/js/motion.js`, a Blade public layout, the
+landing page, a `/styleguide` route, and `config/gallery.php`.
+
+- **The public site is Blade, not React.** A QR code printed on cardboard points
+  at a tailor's profile; somebody scanning it in a market must get a readable
+  page, not a spinner waiting on a bundle. A blank page on a printed card is a
+  permanent physical failure — the card cannot be reissued. It is also how the
+  directory gets indexed, which is the whole answer to "tailors lack
+  visibility". The two halves share a design language, not a renderer.
+- **Zero third-party scripts, measured against the reference.** Ellora loads 18
+  scripts and 9 stylesheets — jQuery, Bootstrap, Swiper, GSAP + ScrollTrigger +
+  SplitText, WOW, Isotope, Parallaxie, magnific-popup, SmoothScroll and more.
+  19 of those files measure **1.12MB before a single image**. Our whole landing
+  page including all CSS and JS is **~90KB uncompressed**. Scroll reveals are one
+  IntersectionObserver; the carousel is `scroll-snap`; the lightbox is a native
+  `<dialog>`; split text is ~30 lines; parallax is one rAF loop that idles when
+  nothing parallaxed is on screen.
+- **`prefers-reduced-motion` kills all of it, and the page stays complete.** Not
+  an accessibility checkbox: on the phones this is actually read on, six things
+  animating at once judders, so the people most likely to enable it are the ones
+  whose hardware most needs it.
+- **Bodoni Moda for display, Inter for everything.** A didone is what makes this
+  read as a fashion house rather than as software. The app uses the same two
+  families so the halves look related.
+- **The photography is the decision that mattered most.** The first stock set
+  considered was generic Western fashion — a blonde with shopping bags, a stack
+  of jeans — and it made the page look like a template for somebody else's
+  business. Replaced with Pexels photographs of Nigerian tailoring and Nigerian
+  dress: agbada, lace, coral beads, a Butterfly machine in an Abuja workshop.
+  **These are placeholders.** Swapping in Rachel's own work is one line per image
+  in `config/gallery.php` and is the highest-value change available to the site.
+
+**Tokens are duplicated, deliberately.** `public/css/design-system.css` is
+canonical; `rachelscloset-web/src/styles/app.css` mirrors the `:root` blocks.
+The two repos deploy separately and a broken import between them would take
+down a page a printed QR code points at. Change one, change both.
+
+Fixes found only by opening it in a browser, all of one shape — a token or a
+value that was right in the abstract and wrong on screen:
+
+- **`--violet-ink`, `--violet-deep` and `--ink-invert` were inverting in dark
+  mode**, but the hero, band, CTA and footer are dark in *both* themes, so all
+  four turned near-white with dark-on-dark text. `--on-dark` now never flips;
+  `--ink-invert` is only for text on a filled control, which genuinely does.
+- **A `.frame` with no ratio modifier has no height**, so the image's
+  `height:100%` resolved against auto and a portrait rendered at full intrinsic
+  size inside a much shorter box. The hero looked like an empty coloured block.
+- **The parallax had the sign inverted and fed back on itself**, and a
+  full-bleed hero has no fixed edge to read movement against anyway. `.drift`
+  moves a photograph inside a frame that holds still, which is where it reads.
+- **`grid-auto-columns: minmax(0, …)` let carousel cards shrink to share the
+  visible width**, so the track never overflowed, the arrows did nothing, and
+  the cards were 210px instead of 365px — which is what was breaking tailor
+  names onto two lines.
+- **Frame ratios must match the source orientation.** A landscape workshop
+  photograph in a `tall` 3:4 frame crops to somebody's forearm. Orientations are
+  now documented in `config/gallery.php`.
+- **Carousels drag with a mouse.** Scroll-snap gives finger-swipe for free but a
+  mouse cannot drag a scroll container; pointer events cover that case, with
+  snapping switched off for the duration or it fights every move.
+
+### Brand assets
+
+`public/brand/mark.svg` is the source of truth for the shape: an interlocking
+RC in Zilla Slab on a lilac tile.
+
+- **A monogram, not a needle or a hanger.** It cannot be mistaken for another
+  business the way a generic tick or spool can. Earlier studies — a thread tick,
+  a curled tick, a spool — all read as somebody else's logo or turned to mush.
+- **The C passes behind the R's bowl and in front of its leg.** That change of
+  order at the second crossing is the entire interlock: letters that merely
+  overlap read as stacked. Mechanically it is the C drawn twice, the second time
+  clipped to one rectangle covering the lower crossing. The same rectangle is
+  used by the SVG `clipPath` and by `imagesetclip` in the generator.
+- **Both letters are outlined paths, not live text**, so the mark renders
+  identically with no webfont and no network: as a favicon, in an email, at the
+  centre of a printed QR code. `mark-mono.svg` cannot stack two colours, so it
+  is one path with `fill-rule="evenodd"` — the overlap cancels to negative
+  space, which is how single-colour monograms have always done it and survives
+  being stamped or embroidered. Note an SVG loaded through `<img>` is isolated
+  and cannot see the page's `currentColor`; it must be inlined to take it.
+- **Below ~20px the two letters run together**, so the 16px entry in
+  `favicon.ico` carries the R alone. That is what a multi-size `.ico` is for.
+- **`--` is illegal inside an XML comment.** Heavily commented SVGs are silently
+  invalid and render as a broken image; the comments here use en dashes.
+- **`php artisan brand:build` renders every raster asset** from the same
+  geometry — `.ico` (16/32/48), the home-screen icons, a maskable icon, the
+  social card and the PNG lockups — so they cannot drift from the SVG. GD, not
+  Imagick, which the host does not have. `resources/brand/ZillaSlab-Bold.ttf`
+  (SIL OFL 1.1) is committed because the command needs it.
+- **The stitches were dropped when the C arrived.** Two letters plus a row of
+  stitching crowded the tile and the stitches became noise below 48px. The
+  interlock is the distinguishing feature now and carries it alone.
+
+**Reset `figure` and `blockquote`.** The browser's own stylesheet gives them
+`margin: 1em 40px`. Eighty pixels of side margin nobody wrote is invisible in a
+wide layout and ruinous in a narrow one — it was taking a third of the width off
+every testimonial card on a phone, which reads as the card being too narrow
+rather than as a margin. Now reset globally in design-system.css.
+
+**Never put a moving reveal on a child of a horizontal scroll container.** A
+container with `overflow-x: auto` computes `overflow-y` to `auto` as well, so
+the 40px translate on each un-revealed card inflated the track's scrollable
+height and clipped every card by exactly that much. Worse, cards off to the
+right had never intersected the viewport, so the first swipe revealed a blank
+card that only then faded in. The reveal now sits on the carousel itself,
+outside the scroll container, and the per-card stagger is opacity alone —
+opacity does not affect layout, so it cannot inflate anything.
+
+**`backdrop-filter` creates a containing block for `position: fixed`
+descendants.** The mobile navigation drawer lives inside the masthead and is
+sized `top: 78px; bottom: 0`. With the frosted filter on the masthead itself,
+that resolved against the 78px bar instead of the viewport and computed to zero
+height — so the drawer worked at the very top of the page, where the masthead is
+transparent, and silently died the moment you scrolled. Measured: 617px tall
+transparent, 0px once solid. The filter now lives on a `::before`, which confines
+the effect to a child with no descendants to trap. Anything else fixed inside
+that header depends on it staying there. `transform`, `filter`, `perspective`
+and `will-change` of those do the same thing.
+
+**Not built yet, and deliberately:** the tailor directory and profile pages are
+Section 15, so the landing page's tailors are illustrative and labelled as such
+on the page. The tracker shown under "How it works" is a static mock of what
+Section 9 builds.
 
 ### Section 3 — done
 
@@ -395,6 +528,10 @@ Screen first, which is the only way Safari allows web push at all.
 php artisan notifications:test 08030000003      # sends one harmless alert
 php artisan notifications:prune --dry-run       # counts, deletes nothing
 ```
+
+The **public site** is Blade at `http://localhost:8001/`, with the design
+language at `/styleguide`. It needs no build step — edit the Blade file and
+reload.
 
 **Uploads** live in `storage/app/private` and are only reachable through
 `GET /api/files/{path}`. Nothing is served by direct URL, so a browser fetching

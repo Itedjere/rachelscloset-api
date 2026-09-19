@@ -1,0 +1,1169 @@
+/*
+ * The public site: masthead, hero, and the sections of the landing page.
+ * Everything here builds on the tokens and primitives in design-system.css.
+ */
+
+/* ===========================================================================
+   Masthead
+   =========================================================================== */
+
+.masthead {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition:
+    background var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    color var(--dur) var(--ease-out);
+}
+
+/* Over the hero: transparent, with light type. The hero photograph carries a
+   scrim behind it so the contrast is real rather than hoped for. */
+.masthead:not(.is-solid) {
+  color: var(--on-dark);
+}
+
+.masthead.is-solid {
+  background: color-mix(in srgb, var(--bone) 88%, transparent);
+  box-shadow: 0 1px 0 var(--line);
+  color: var(--ink);
+}
+
+/*
+ * The frosted panel lives on a pseudo-element, NOT on .masthead itself.
+ *
+ * `backdrop-filter` creates a containing block for position:fixed descendants.
+ * With it on the masthead, the mobile navigation panel inside -- which is
+ * fixed and sized with `inset: 78px 0 0` -- resolved against the 78px-tall
+ * masthead instead of the viewport, so it computed to zero height and never
+ * appeared. It worked at the very top of the page, where the masthead is
+ * transparent and the filter is absent, and broke the moment you scrolled:
+ * measured 617px tall transparent, 0px once solid.
+ *
+ * Putting the filter on a child confines that effect to the child, which has
+ * no descendants to trap. Anything else fixed inside this header depends on
+ * that, so keep the filter off the header itself.
+ */
+.masthead.is-solid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+}
+
+.masthead .wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+  height: 78px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-right: auto;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.brand img {
+  flex: none;
+  /* The tile is already a rounded square; no radius or shadow on top of it. */
+  border-radius: 8px;
+}
+
+.brand em {
+  font-size: 0.72em;
+  font-weight: 400;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-style: normal;
+  opacity: 0.62;
+}
+
+.masthead nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+}
+
+.masthead nav a {
+  position: relative;
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding-block: var(--s-2);
+}
+
+.masthead nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--dur) var(--ease-out);
+}
+
+.masthead nav a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.masthead .actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.icon-btn:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .masthead nav {
+    position: fixed;
+    top: 78px;
+    left: 0;
+    right: 0;
+    /* dvh, not vh: on a phone the address bar collapses as you scroll and vh
+       would leave the panel taller than the screen. */
+    height: calc(100dvh - 78px);
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--s-8);
+    background: var(--bone);
+    color: var(--ink);
+    /* Clipped rather than hidden, so the panel wipes down from the masthead. */
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path var(--dur) var(--ease-out);
+  }
+
+  .masthead nav.is-open {
+    clip-path: inset(0 0 0 0);
+  }
+
+  .masthead nav a {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    text-transform: none;
+    letter-spacing: -0.02em;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+}
+
+/* ===========================================================================
+   Hero
+   =========================================================================== */
+
+.hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 100svh;
+  overflow: hidden;
+  background: var(--violet-ink);
+  color: var(--on-dark);
+}
+
+.hero__media {
+  position: absolute;
+  /*
+   * Overscan. The parallax lags the scroll by `data-speed` of the distance
+   * travelled, so the media must extend past the section by at least that
+   * much or the translate exposes a bare edge. 25% covers a 0.25 speed over
+   * roughly one viewport of scroll.
+   */
+  inset: -28% 0;
+  z-index: 0;
+}
+
+/*
+ * The full-bleed frames carry no aspect-ratio modifier -- they take their
+ * height from the section instead. Without this the frame has no height at
+ * all, the image's height:100% resolves against auto, and a portrait renders
+ * at its full intrinsic height inside a much shorter box. The symptom is a
+ * hero that looks like an empty coloured block: you are seeing the top sliver
+ * of a photograph three times too tall, under the scrim.
+ */
+.hero__media .frame,
+.cta__media .frame {
+  height: 100%;
+  border-radius: 0;
+}
+
+.hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /*
+   * A portrait in a wide hero, overscanned for parallax, is cropped hard --
+   * only about a third of the image height survives. At 28% that window began
+   * below her eyes. 10% pulls it up to include the whole head while still
+   * keeping the beadwork and embroidery in frame at the bottom.
+   */
+  object-position: center 10%;
+}
+
+/*
+ * Two scrims, not one. A single flat overlay greys the photograph out; a
+ * bottom-weighted gradient over a violet ground keeps the fabric colours
+ * alive while still guaranteeing the type has something to sit on.
+ */
+.hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(37, 21, 64, 0.55) 0%, rgba(37, 21, 64, 0) 34%),
+    linear-gradient(0deg, rgba(37, 21, 64, 0.92) 4%, rgba(37, 21, 64, 0.25) 46%, rgba(37, 21, 64, 0.1) 100%);
+}
+
+.hero__body {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-block: clamp(3rem, 12vh, 7rem);
+}
+
+.hero .display {
+  max-width: 14ch;
+  margin-bottom: var(--s-6);
+}
+
+.hero .lead {
+  max-width: 46ch;
+  color: rgba(252, 250, 255, 0.82);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  margin-top: var(--s-8);
+}
+
+.hero__cue {
+  position: absolute;
+  left: 50%;
+  bottom: var(--s-6);
+  z-index: 2;
+  transform: translateX(-50%);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: rgba(252, 250, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.hero__cue::after {
+  content: "";
+  width: 1px;
+  height: 46px;
+  background: linear-gradient(180deg, var(--champagne-soft), transparent);
+  animation: cue 2.4s var(--ease-in-out) infinite;
+}
+
+@keyframes cue {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+    transform-origin: top;
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    transform-origin: top;
+    opacity: 1;
+  }
+}
+
+/* ===========================================================================
+   Marquee band
+   =========================================================================== */
+
+.band {
+  background: var(--violet-deep);
+  color: var(--champagne-soft);
+  padding-block: var(--s-4);
+  border-block: 1px solid rgba(226, 205, 160, 0.18);
+}
+
+.band span {
+  font-family: var(--font-display);
+  font-size: clamp(1.125rem, 2.2vw, 1.75rem);
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.band .dot {
+  color: var(--champagne);
+  font-style: normal;
+  opacity: 0.6;
+}
+
+/* ===========================================================================
+   Editorial split
+   =========================================================================== */
+
+.editorial {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem, 6vw, 5.5rem);
+  align-items: center;
+}
+
+.editorial.flip .editorial__media {
+  order: 2;
+}
+
+@media (max-width: 860px) {
+  .editorial {
+    grid-template-columns: 1fr;
+  }
+
+  .editorial.flip .editorial__media {
+    order: 0;
+  }
+}
+
+/* A second photograph overlapping the first, offset. Cheap, and it is the
+   single thing that most makes a two-column section look art-directed rather
+   than like a CMS block. */
+.editorial__media {
+  position: relative;
+}
+
+.editorial__inset {
+  position: absolute;
+  right: -8%;
+  bottom: -12%;
+  width: 46%;
+  box-shadow: var(--shadow-lift);
+  border: 6px solid var(--bone);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  .editorial__inset {
+    right: -4%;
+    width: 52%;
+  }
+}
+
+/* ===========================================================================
+   Steps — the production tracker, which is the actual product
+   =========================================================================== */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(1.5rem, 3vw, 3rem);
+  counter-reset: step;
+}
+
+@media (max-width: 860px) {
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+.step {
+  position: relative;
+  padding-top: var(--s-8);
+  border-top: 1px solid rgba(252, 250, 255, 0.22);
+  counter-increment: step;
+}
+
+.step::before {
+  content: counter(step, decimal-leading-zero);
+  display: block;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--champagne);
+  margin-bottom: var(--s-4);
+}
+
+.step h3 {
+  margin-bottom: var(--s-3);
+}
+
+/* A mock of the tracker itself. Showing the product beats describing it. */
+.tracker {
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: var(--radius-lg);
+  padding: var(--s-6);
+  box-shadow: var(--shadow-lift);
+  max-width: 380px;
+}
+
+.tracker__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding-block: var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.tracker__row:last-child {
+  border-bottom: 0;
+}
+
+.tracker__tick {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-strong);
+  font-size: 15px;
+  color: transparent;
+}
+
+.tracker__row.done .tracker__tick {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+.tracker__row.done .tracker__label {
+  color: var(--ink-mute);
+  text-decoration: line-through;
+  text-decoration-color: var(--line-strong);
+}
+
+.tracker__label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.tracker__play {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* ===========================================================================
+   Gallery
+   =========================================================================== */
+
+/*
+ * A deliberately uneven grid. Everything the same size reads as a product
+ * catalogue; letting two tiles run tall reads as a lookbook, which is what
+ * this is. Pure CSS grid -- Isotope is 35KB to do less.
+ */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-3);
+}
+
+.gallery > * {
+  position: relative;
+  display: block;
+  cursor: zoom-in;
+}
+
+.gallery > *:nth-child(1),
+.gallery > *:nth-child(6) {
+  grid-row: span 2;
+}
+
+@media (max-width: 900px) {
+  .gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.gallery figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: var(--s-6) var(--s-4) var(--s-4);
+  background: linear-gradient(0deg, rgba(37, 21, 64, 0.85), transparent);
+  color: var(--on-dark);
+  font-size: var(--fs-small);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--dur) var(--ease-out),
+    transform var(--dur) var(--ease-out);
+}
+
+.gallery > *:hover figcaption,
+.gallery > *:focus-visible figcaption {
+  opacity: 1;
+  transform: none;
+}
+
+/* ===========================================================================
+   Carousel
+   =========================================================================== */
+
+.carousel__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-6);
+  margin-bottom: var(--s-8);
+}
+
+.carousel__nav {
+  display: flex;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.carousel__nav button {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.carousel__nav button:hover:not(:disabled) {
+  background: var(--lilac);
+  border-color: var(--lilac);
+  color: var(--ink-invert);
+}
+
+.carousel__nav button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.carousel__track {
+  display: grid;
+  grid-auto-flow: column;
+  /*
+   * A fixed width, not minmax(). With a shrinkable minimum the five cards
+   * simply divide the visible width between them: the track stops overflowing,
+   * the carousel has nothing to scroll, and every card is squeezed to a third
+   * of its intended size. On a phone one card plus a sliver of the next is
+   * what tells somebody there is more to swipe to.
+   */
+  grid-auto-columns: 78%;
+  gap: var(--s-6);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  /* The scrollbar is hidden but the track is still a real scroll container, so
+     a finger, a trackpad and the arrow buttons all drive the same thing. */
+  scrollbar-width: none;
+  /* Room for a card's hover lift and its shadow, top and bottom. A horizontal
+     scroll container computes overflow-y to auto, so anything that strays
+     outside it is clipped rather than simply drawn. */
+  padding-block: var(--s-2);
+  /* A finger scrolls this natively; the cursor change is what tells a mouse
+     user it can be dragged at all. */
+  cursor: grab;
+}
+
+.carousel__track.is-dragging {
+  cursor: grabbing;
+  /* Without this a drag across a quote selects the text instead of moving. */
+  user-select: none;
+}
+
+.carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .carousel__track {
+    grid-auto-columns: calc(33.333% - var(--s-4));
+  }
+}
+
+.carousel__track > * {
+  scroll-snap-align: start;
+}
+
+/* --- Tailor card --------------------------------------------------------- */
+
+.tailor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.tailor__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+}
+
+/*
+ * Smaller than a normal h3, and allowed to shrink. "Mama Ngozi Couture" in the
+ * display face at h3 size does not fit a third of the grid, and a name broken
+ * across two lines next to a star rating reads as a layout accident.
+ */
+.tailor h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.tailor .stars {
+  color: var(--champagne);
+  letter-spacing: 0.1em;
+  font-size: var(--fs-small);
+  flex: none;
+}
+
+.tailor .where {
+  font-size: var(--fs-small);
+  color: var(--ink-mute);
+}
+
+/* ===========================================================================
+   Stats
+   =========================================================================== */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s-8);
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s-12) var(--s-6);
+  }
+}
+
+.stat .counter {
+  color: var(--champagne-soft);
+}
+
+.stat p {
+  margin: var(--s-2) auto 0;
+  max-width: 18ch;
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ===========================================================================
+   Quote
+   =========================================================================== */
+
+.quote {
+  text-align: center;
+  max-width: 24ch;
+  margin-inline: auto;
+}
+
+.quote blockquote {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.6vw, 2.5rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.32;
+  max-width: none;
+}
+
+.quote figcaption {
+  margin-top: var(--s-6);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* ===========================================================================
+   Call to action
+   =========================================================================== */
+
+.cta {
+  position: relative;
+  overflow: hidden;
+  background: var(--violet-ink);
+  color: var(--on-dark);
+  text-align: center;
+}
+
+.cta__media {
+  position: absolute;
+  /* Mid-page, so it travels in both directions -- needs more headroom than
+     the hero for the same speed. */
+  inset: -40% 0;
+  z-index: 0;
+  opacity: 0.28;
+}
+
+.cta__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cta .wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.cta .display {
+  max-width: 16ch;
+  margin-inline: auto;
+}
+
+/*
+ * Every paragraph carries max-width:62ch from the base styles, which in a
+ * centred section leaves a left-pinned block with centred text inside it --
+ * so the button sat off to one side rather than under the heading.
+ */
+.cta p {
+  margin-inline: auto;
+}
+
+/*
+ * .lead is --ink-soft, which is a muted grey chosen for a light page. On the
+ * dark call to action that was almost invisible. Same treatment as the hero.
+ */
+.cta .lead {
+  color: rgba(252, 250, 255, 0.82);
+}
+
+/* ===========================================================================
+   Footer
+   =========================================================================== */
+
+.footer {
+  background: var(--violet-ink);
+  color: rgba(252, 250, 255, 0.72);
+  padding-block: var(--s-16) var(--s-8);
+  border-top: 1px solid rgba(226, 205, 160, 0.16);
+}
+
+.footer a:hover {
+  color: var(--champagne-soft);
+}
+
+.footer__grid {
+  display: grid;
+  grid-template-columns: 1.6fr repeat(3, 1fr);
+  gap: var(--s-8);
+  margin-bottom: var(--s-16);
+}
+
+@media (max-width: 860px) {
+  .footer__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-12) var(--s-6);
+  }
+}
+
+.footer .brand {
+  color: var(--on-dark);
+  margin-bottom: var(--s-4);
+}
+
+.footer h4 {
+  margin: 0 0 var(--s-4);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--champagne-soft);
+}
+
+.footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+  font-size: var(--fs-small);
+}
+
+.footer__base {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  justify-content: space-between;
+  padding-top: var(--s-8);
+  border-top: 1px solid rgba(252, 250, 255, 0.12);
+  font-size: var(--fs-small);
+  color: rgba(252, 250, 255, 0.5);
+}
+
+/* ===========================================================================
+   Lightbox
+   =========================================================================== */
+
+.lightbox {
+  width: min(92vw, 1100px);
+  max-width: none;
+  max-height: 92vh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.lightbox::backdrop {
+  background: rgba(20, 12, 34, 0.93);
+  backdrop-filter: blur(6px);
+}
+
+.lightbox img {
+  width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease-out);
+}
+
+.lightbox img.is-loaded {
+  opacity: 1;
+}
+
+.lightbox__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-top: var(--s-4);
+  color: var(--on-dark);
+}
+
+.lightbox__bar p {
+  margin: 0;
+  flex: 1;
+  font-size: var(--fs-small);
+  max-width: none;
+}
+
+.lightbox button {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border: 1px solid rgba(252, 250, 255, 0.3);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--on-dark);
+  cursor: pointer;
+}
+
+.lightbox button:hover {
+  background: rgba(252, 250, 255, 0.14);
+}
+
+/* ===========================================================================
+   Credits
+   =========================================================================== */
+
+/* Stock photography, credited because the licence asks for it and because the
+   day these are replaced with Rachel's own work, this list is the checklist. */
+.credits {
+  font-size: 0.75rem;
+  color: var(--ink-mute);
+  line-height: 1.7;
+}
+
+.credits a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+
+/* ===========================================================================
+   Drift
+   =========================================================================== */
+
+/*
+ * A photograph that moves inside its own frame as the page scrolls. The frame
+ * holds its place in the layout and clips; only the image inside it moves, so
+ * nothing reflows and the effect costs one compositor transform.
+ *
+ * This is where parallax actually reads. A full-bleed hero moving behind text
+ * is easy to miss -- there is no fixed edge to measure it against. A framed
+ * photograph sliding against its own border is unmistakable.
+ */
+.frame.drift > img {
+  position: absolute;
+  top: -15%;
+  left: 0;
+  /*
+   * The minimum extra image that covers the travel. Every percent beyond that
+   * is a percent the photograph is needlessly zoomed into, and these are
+   * portraits -- crop too hard and the subject is gone.
+   */
+  height: 130%;
+}
+
+
+/* ===========================================================================
+   Masthead sentinel
+   =========================================================================== */
+
+/*
+ * What tells the masthead it has left the hero.
+ *
+ * It used to sit after the whole hero section, which meant the bar stayed
+ * transparent for a full viewport of scrolling -- long enough for the hero's
+ * own text to slide up underneath it and collide with the logo. Anchoring it
+ * near the top of the hero solidifies the bar well before anything reaches it,
+ * while still giving the transparent-over-photograph look on arrival.
+ */
+.masthead-sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 180px;
+  pointer-events: none;
+}
+
+
+/* ===========================================================================
+   Testimonials
+   =========================================================================== */
+
+.testimonial {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  height: 100%;
+  padding: var(--s-8);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+.testimonial:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+}
+
+/* The quote mark, set large and low-contrast so it reads as an ornament
+   rather than as a character somebody has to parse. */
+.testimonial::before {
+  content: "“";
+  display: block;
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  line-height: 0.7;
+  color: var(--lilac);
+  opacity: 0.28;
+}
+
+.testimonial blockquote {
+  margin: 0;
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.5;
+  max-width: none;
+}
+
+.testimonial .stars {
+  color: var(--champagne);
+  letter-spacing: 0.12em;
+  font-size: var(--fs-small);
+}
+
+.testimonial figcaption {
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+}
+
+.testimonial .who {
+  font-weight: 600;
+}
+
+.testimonial .what {
+  font-size: var(--fs-small);
+  color: var(--ink-mute);
+}
+
+/* Customer or tailor, so a reader knows which side of the exchange is
+   speaking -- the two have completely different reasons to be pleased. */
+.testimonial .tag {
+  display: inline-block;
+  margin-left: var(--s-2);
+  padding: 2px var(--s-2);
+  border-radius: 999px;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+[data-theme="dark"] .testimonial .tag {
+  color: var(--lilac-bright);
+}
+
+/* A hint that there is more to the right, on the edge that is cut off. */
+.carousel.bleed .carousel__track {
+  scroll-padding-left: 0;
+}
+
+
+/* ===========================================================================
+   Styleguide specimens
+   =========================================================================== */
+
+/* A row of the same thing at several sizes, baselines aligned. */
+.specimen-row {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+}
+
+.specimen-row figure {
+  margin: 0;
+  text-align: center;
+}
+
+.specimen-row figcaption {
+  margin-top: var(--s-2);
+  font-size: 0.75rem;
+  color: var(--ink-mute);
+}
+
+
+/* ===========================================================================
+   Carousel cards on a phone
+   =========================================================================== */
+
+/*
+ * Below the three-up breakpoint a card was 78% of an already narrow track with
+ * 32px of padding inside it, which left a column of text barely wider than a
+ * couple of words. Widen the card, tighten the gap and take the padding down
+ * so the words get the room instead of the border.
+ *
+ * The peek stays deliberately: about 30px of the next card remains visible,
+ * which is the only thing telling somebody there is more to swipe to. Going to
+ * a full-width card would read as a single static card and lose that.
+ */
+@media (max-width: 719px) {
+  .carousel__track {
+    grid-auto-columns: 88%;
+    gap: var(--s-4);
+  }
+
+  .testimonial {
+    padding: var(--s-5);
+    gap: var(--s-3);
+    border-radius: var(--radius);
+  }
+
+  /* The ornament was taking a fifth of the card's height on a small screen. */
+  .testimonial::before {
+    font-size: 3rem;
+  }
+
+  .testimonial figcaption {
+    padding-top: var(--s-3);
+  }
+}
+
+
+/* ===========================================================================
+   Revealing a carousel
+   =========================================================================== */
+
+/*
+ * The cards fade in; they do NOT move.
+ *
+ * They used to carry `data-reveal="up"` individually, which broke twice over.
+ * A horizontal scroll container computes `overflow-y` to auto, so the 40px
+ * downward translate on each un-revealed card inflated the track's scrollable
+ * height and clipped every card by exactly that much. And because the cards
+ * off to the right had never intersected the viewport, they were still sitting
+ * at opacity 0 -- so the first swipe revealed a blank card that only then
+ * faded in.
+ *
+ * The trigger now lives on the carousel itself, outside the scroll container,
+ * where a transform costs nothing. The stagger is opacity alone, which does
+ * not affect layout and so cannot inflate anything.
+ */
+.carousel[data-reveal] .carousel__track > * {
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  transition-delay: calc(var(--card-index, 0) * 90ms);
+}
+
+.carousel[data-reveal].is-in .carousel__track > * {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel[data-reveal] .carousel__track > * {
+    opacity: 1;
+  }
+}
