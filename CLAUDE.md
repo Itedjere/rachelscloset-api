@@ -171,6 +171,29 @@ existed.
 BizyFarmers' equivalent governed *email*. Here it governs push, because nothing
 in this project requires an address and most tailors have never had one.
 
+### orders, payments, payouts, webhook_events
+
+`orders` — `reference` (unique, speakable: no 0/O/1/I, because it gets read
+down a phone line), customer, tailor, garment type, `amount`, `deposit_amount`,
+`escrow` (per order — §3 calls escrow optional), the status machine
+(`pending_payment → in_progress → ready → collected → completed`, plus
+`cancelled` and `disputed`), `collection_deadline`, and `steps_total` /
+`steps_completed` / `steps_with_photo` which only Section 9 writes.
+
+`payments` — carries `purpose enum('order','subscription')` and a nullable
+`subscription_id` from birth so Section 14 needs no ALTER on a table holding
+real money. **`provider_reference` is unique**; that is the idempotency.
+
+`payouts` — one per order (unique `order_id`, so a double release is a
+constraint violation). No commission column.
+
+`webhook_events` — raw payload, signature validity, outcome. Written even for a
+bad signature, because somebody probing the endpoint is worth seeing.
+
+`tailor_profiles` gains `bank_code`, `bank_account_number`,
+`bank_account_name`, `transfer_recipient`, all nullable: a payout stays
+`pending` until they exist rather than failing.
+
 ### platform_settings
 `id, key (unique), value, updated_at`
 
@@ -232,12 +255,194 @@ reason, and push is sent inside the request.
 `ConfirmPayment`, webhooks) · 5 orders + escrow + payouts + refunds · 6 admin
 shell, staff roles, settings, suspensions, public Blade site.
 
-**New work:** 3.5 design language ✅ · 7 garment types + admin step library with
-voice notes ✅ · 8 templates + arrow reordering ✅ · 9 orders assembled from
-steps, snapshotted · 10 photo proof · 11 measurements + consent + claim flow ·
-12 completion + escrow release · 13 two-way reviews + proof gate ·
-14 subscriptions · 15 Fashion House directory · 16 QR + business card ·
-17 admin dashboard.
+**New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
+8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
+10 photo proof · 11 measurements + consent + claim flow · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
+directory · 16 QR + business card · 17 admin dashboard.
+
+### Sections 4 and 5 — orders and the money spine — partly done
+
+`orders`, `payments`, `payouts`, `webhook_events`, bank columns on
+`tailor_profiles`. Flutterwave v3 gateway, `SandboxGateway`,
+`PaymentGatewayManager`, `ConfirmPayment`, `OrderController`,
+`PaymentController`, the webhook endpoint. 34 new tests, 141 total.
+
+**4 and 5 are one section, not two.** `payments.order_id` is a foreign key and
+`ConfirmPayment` is about orders from end to end — there is no coherent
+payments-only unit to build.
+
+- **Flutterwave v3, verified not assumed.** As of September 2026 v3 is the
+  stable production API with no deprecation announced; v4 is public beta and
+  changes the auth model to OAuth client credentials. This resolves the open
+  risk in the plan file. When v4 lands it is `FlutterwaveGateway` that changes.
+- **No commission, anywhere.** `payouts` has no commission column, unlike
+  BizyFarmers. The subscription is the revenue and the Flutterwave charge is
+  absorbed; `gross` and `net` differ only after a refund.
+- **`provider_reference` is unique, and that is the whole idempotency story.**
+  A replayed webhook, a browser returning twice, and the two racing each other
+  all collapse onto one row. Tested.
+- **Money is compared with `bccomp` on decimal strings.** Casting naira to a
+  float to compare it is how a payment of exactly the right amount reads as a
+  penny short.
+- **`status` is not mass-assignable on `Order`,** so no request body can move
+  an order through its states. Transitions use `forceFill`, which makes each
+  one visible at the call site. A test asserts a `status` in the create body is
+  ignored. **This bit me while building it**: `update(['status' => …])` failed
+  silently four times before the tests caught it.
+- **The tailor opens the order, not the customer.** They are in the shop
+  together when measurements are taken; a customer-initiated quote-and-accept
+  round trip would be for a conversation that already happened out loud.
+- **`ready` is the state BizyFarmers has no equivalent of** and the one the
+  brief was missing. It starts the collection deadline, which is what makes
+  "the customer never came back" something the platform can act on.
+- **A payer with no email gets a synthesised one.** Flutterwave requires the
+  field and most people here have no address. It is
+  `{phone}@no-mail.rachelscloset.com.ng` — a domain that resolves nowhere, so
+  nothing pretends a receipt will arrive.
+- **The sandbox gateway cannot run outside local.** `PaymentGatewayManager`
+  requires both the flag and the environment, because its webhook handler
+  checks no signature — a `.env` copied to a server would otherwise turn the
+  endpoint into one that takes unsigned instructions from anybody.
+
+**The order UI is built**: list with status filters, the create form, the
+detail page with pay and the state transitions, and the return-from-provider
+page. Driven end to end against the sandbox gateway — deposit paid, order into
+progress, payout recorded, tailor notified, ready, collected.
+
+**Finding a customer is by exact phone number, never a search.** A tailor able
+to browse or name-search every customer would have a directory of other
+people's clients, which she does not need and they did not agree to. The phone
+is the username; the customer is in the shop and reads it out. A number nobody
+has is Section 11's problem.
+
+### Money out — release, refunds, bank details
+
+`TransferGateway` + `FlutterwaveTransfers` + `SandboxTransfers` +
+`TransferManager`, `ReleasePayout`, `RefundOrder`, `BankAccountController`,
+`payouts:release-due` on the 06:00 schedule, and the UI for all of it.
+17 more tests, 158 total.
+
+- **Escrow release never depends on a cron.** `Order::escrowReleaseDue()` is
+  computed from `collected_at` and a setting, so the tailor can release her own
+  money the moment it is due. The scheduled sweep is a courtesy — if it stops,
+  she taps a button instead of being stranded. Same reasoning as a suspension
+  lapsing on use.
+- **The customer confirming is the fast path.** Once the person who paid says
+  the garment is right there is nothing left to wait for, so confirming
+  completes and releases at once. The waiting period is the fallback for
+  silence.
+- **Release is independent of everything except the order.** Tested against a
+  suspended tailor: money owed is owed. §3 says a lapse hides her from the
+  directory and nothing else.
+- **No bank details is `pending`, not `failed`.** Completing an order must
+  never fail because somebody has not finished a form. The money stays
+  recorded as owed with a reason attached.
+- **A transfer reference is derived from the payout id alone, with no
+  timestamp.** Flutterwave rejects a duplicate reference, so a retry after a
+  timeout cannot pay twice — the failure we least want is the one where we are
+  unsure whether the money left.
+- **Bank details are resolved twice**, once to show her the name and again on
+  save. Trusting the name the client posts back would make the confirmation
+  step theatre. The stored `transfer_recipient` is checked against the stored
+  account before any transfer, so an account cannot be edited after
+  verification and silently paid.
+- **Refunds are admin-only and partial by default**, and refuse once a payout
+  has been released — taking money back from the customer after paying the
+  tailor means the platform pays twice. That is a conversation, not a button.
+
+### The admin order screens
+
+`Admin\OrderController` (list, search, detail) and the refund UI. 8 more tests,
+166 total.
+
+- **A deliberate widening of the ordinary scoping.** `OrderController` is
+  scoped to the two people on an order and an admin is on none of them, so
+  refunding would have meant guessing with somebody else's money. `Admin  OrderController` exposes every order and its payments. It is **not** a
+  general bypass — measurement photographs stay closed to admins without a
+  specific permission and a real dispute, per FileAccess.
+- **Search takes the two things somebody ringing up can actually give you**: a
+  reference, or either party's phone number. A term that is not a valid
+  Nigerian number stays a reference search rather than also sweeping the user
+  table — there is a test for that.
+- **A refund is confirmed in two steps.** It moves real money and cannot be
+  undone from the screen, so the resulting figures — what the customer gets
+  back, what the tailor will then be owed — are shown before anything is sent.
+  Same reasoning as resolving a bank account before paying into it.
+- **Every reason the server would refuse is said up front**, in the panel,
+  instead of after a click: already paid out, or nothing paid yet.
+
+**Not built yet, and deliberately:** only `order_paid`, `payout_released` and
+`order_refunded` notify — `order_ready` and `collection_reminder` come with the
+sections that trigger them.
+
+### The app shell
+
+`Layout` is a header, a grouped sidebar and the page.
+
+- **The header carries only what is true on every screen** — the brand, the
+  theme, the bell and the avatar. Navigation lives in the sidebar, so the
+  header cannot slowly fill with links as the remaining sections land, which is
+  exactly what it was starting to do.
+- **The sidebar lists only routes that exist.** Sketching the rest of the plan
+  in it — Orders, Measurements, Reviews — would teach people the navigation
+  lies. Each section adds its own entry as it lands.
+- **Below 900px it becomes a drawer** and a menu button appears in the header.
+  That button is the one thing added to the header on a small screen; a docked
+  sidebar on a 5-inch phone leaves nothing for the page.
+- **The avatar opens a menu** with the account links and sign out, closing on
+  Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
+  than `click` for the outside dismiss, because a click fires after release —
+  by which time a link outside the menu has already begun navigating.
+
+### Section 9 — the tracker — done
+
+`order_steps`, assembled from the tailor's arrangement when the order is
+created. The tap-to-complete checklist §1 calls the product. 15 new tests, 181
+total.
+
+- **Everything is snapshotted** — label, instructions and the path to the
+  recording are copied onto `order_steps` and never read back from the library.
+  Not an optimisation, a correctness rule: the customer *read* those words and
+  played that recording, and an admin tidying the wording next month must not
+  reach back and rewrite the timeline she already saw. `production_step_id` is
+  kept as provenance only, nullable and null-on-delete, precisely because
+  nothing reads through it. Two tests hold the line: renaming a library step
+  leaves an existing order untouched, and replacing a recording leaves the
+  order's copy playable.
+- **Assembled at creation, not at payment.** Seeing which stages her garment
+  will pass through is most of what she is deciding on. Making her pay first to
+  find out is the opacity this platform exists to remove, so the checklist is
+  on the order page beside the Pay button, read-only.
+- **A step retired between the arrangement being saved and the order being
+  opened is still copied.** The tailor arranged her work that way; an admin
+  tidying the library is not a reason to silently drop a stage from a garment
+  being made now.
+- **Ticking the last stage is what makes an order ready.** There is no separate
+  "mark ready" button where a checklist exists — it would be asking twice, and
+  would let her declare a garment ready with stages untouched. It survives only
+  for an order whose garment type had an empty arrangement.
+- **Un-ticking is allowed**, because a mis-tap on a five-inch screen is
+  ordinary and the alternative is a tailor with a wrong timeline she cannot
+  fix. The customer is told only on the transition *into* done, so correcting a
+  slip does not buzz her phone again.
+- **The last tick sends one notification, not two.** The order-is-ready notice
+  covers that moment and says more; most arrangements end with a stage called
+  something like "Ready to collect", so both would read as the same sentence
+  twice.
+- **Counters are recomputed from scratch**, never adjusted, so nothing can
+  drift into "7 of 6 done". `RecalculateOrderProgress` is the only thing that
+  writes them — including at assembly, so a new order reads "0 of 10" on the
+  list rather than "0 of 0" for the whole stretch where she is wondering
+  whether anything is happening.
+- **`steps_total`, `steps_completed` and `steps_with_photo` got attribute
+  defaults on the model**, for the same reason `status` has one: a schema
+  default is on the row, not on the object, so a freshly created model read
+  them back as null and wrote that null straight into a NOT NULL column. Found
+  by a test, not in production.
+
+The UI is `OrderTracker.tsx`: a 48px circle per stage rather than a checkbox,
+the voice note on the row rather than behind a tap, and the tick applied
+optimistically so it lands under her thumb before the request returns.
 
 ### Sections 7 and 8 — the step library — done
 
@@ -269,12 +474,10 @@ editor with arrows, and a seeded starting library of 10 Nigerian garments and
   migration says so rather than pretending otherwise.
 
 **A correction to Section 3's `FileAccess` note:** the step-voice-note resolver
-matches only a step's *current* recording. Replacing one leaves the old file on
-disk but nothing points at it, so it is unreachable — correct today, because
-nothing references an old path yet. **Section 9 must widen that resolver to
-accept any path an `order_step` holds**, or replacing a library recording will
-silence that step for every customer part-way through an order, which is the
-entire reason the old file is kept.
+matched only a step's *current* recording. Replacing one leaves the old file on
+disk with nothing pointing at it, so it was unreachable — correct at the time,
+because nothing referenced an old path yet. **Section 9 widened that resolver
+to accept any path an `order_step` holds.** Closed, with a test.
 
 ### Section 3.5 — the design language — done
 
@@ -511,6 +714,15 @@ npm run dev                          # in rachelscloset-web, serves on 5174
 
 Vite proxies `/api` to `127.0.0.1:8001`, so the browser stays on one origin —
 which a service worker needs.
+
+**Flutterwave, locally.** `FLUTTERWAVE_SANDBOX=true` swaps in a gateway that
+always succeeds, so the order flow can be clicked through with no network and
+no keys. It only takes effect in `local` — see `PaymentGatewayManager`. Set it
+`false` to use real sandbox keys.
+
+**`FRONTEND_URL` must match the port Vite actually took.** It is the return URL
+a payer comes back to. Something already holds 5174 on this machine, so Vite
+falls back to 5175 and `.env` is set to match; if that changes, this changes.
 
 **Web push, locally.** Keys are already in `.env`. Regenerating them silently
 breaks every device already subscribed, which is why `push:vapid` refuses to

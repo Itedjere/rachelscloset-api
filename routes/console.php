@@ -16,3 +16,11 @@ Artisan::command('inspire', function () {
 | than a full disk.
 */
 Schedule::command('notifications:prune')->dailyAt('03:15');
+
+/*
+| Escrow whose waiting period has run out.
+|
+| A courtesy: a tailor can release her own money the moment it is due, so a
+| cron that has quietly stopped costs her a tap rather than stranding it.
+*/
+Schedule::command('payouts:release-due')->dailyAt('06:00');

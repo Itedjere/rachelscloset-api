@@ -40,6 +40,23 @@ return [
         'private_key' => env('VAPID_PRIVATE_KEY'),
     ],
 
+    /*
+     * Flutterwave. v3 -- see FlutterwaveGateway for why that is deliberate.
+     *
+     * `sandbox` only takes effect locally: PaymentGatewayManager refuses to
+     * hand back the fake gateway anywhere else, because its webhook handler
+     * checks no signature.
+     */
+    'flutterwave' => [
+        'secret' => env('FLUTTERWAVE_SECRET_KEY'),
+        'public' => env('FLUTTERWAVE_PUBLIC_KEY'),
+        // Compared verbatim against the verif-hash header; not an HMAC, so it
+        // has to be long and unguessable.
+        'webhook_hash' => env('FLUTTERWAVE_WEBHOOK_HASH'),
+        'base_url' => env('FLUTTERWAVE_BASE_URL', 'https://api.flutterwave.com/v3'),
+        'sandbox' => env('FLUTTERWAVE_SANDBOX', false),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

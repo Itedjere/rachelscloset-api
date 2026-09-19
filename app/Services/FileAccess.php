@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\OrderStep;
 use App\Models\ProductionStep;
 use App\Models\User;
 
@@ -101,6 +102,15 @@ class FileAccess
              *
              * Resolved against a real record, so a guessed path finds
              * nothing.
+             *
+             * Two places count: a step's current recording, AND any path an
+             * order_step snapshotted. The second is not optional. Replacing a
+             * library recording leaves the old file on disk with nothing in
+             * production_steps pointing at it -- and every order assembled
+             * before the replacement still holds that path. Without the
+             * second check, an admin re-recording one step would silence it
+             * for every customer part-way through an order, which is the
+             * whole reason the old file is kept.
              */
             self::STEP_VOICE_NOTES => $this->isAStepRecording($path),
 
@@ -115,18 +125,15 @@ class FileAccess
     }
 
     /**
-     * A recording that belongs to a step.
+     * A recording that belongs to a step, current or superseded.
      *
-     * This matches only a step's CURRENT recording. Replacing one leaves the
-     * old file on disk with nothing pointing at it, so it becomes unreachable
-     * -- correct today, because nothing references an old path yet. Section 9
-     * snapshots these paths onto orders and must widen this, or replacing a
-     * recording will silence that step for every customer part-way through an
-     * order, which is the whole reason the old file is kept.
+     * A superseded path is reachable precisely because an order_step still
+     * holds it. That is the point of write-once recordings.
      */
     private function isAStepRecording(string $path): bool
     {
-        return ProductionStep::query()->where('voice_note_url', $path)->exists();
+        return ProductionStep::query()->where('voice_note_url', $path)->exists()
+            || OrderStep::query()->where('voice_note_url', $path)->exists();
     }
 
     /** A photograph somebody actually set, rather than a path off the disk. */

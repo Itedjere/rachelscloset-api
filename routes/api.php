@@ -1,11 +1,19 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\GarmentTypeController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductionStepController;
+use App\Http\Controllers\Api\Admin\RefundController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BankAccountController;
 use App\Http\Controllers\Api\ConfigController;
+use App\Http\Controllers\Api\CustomerLookupController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\OrderStepController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\StepTemplateController;
@@ -36,6 +44,18 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,
 | subscribes, so none of it is secret and all of it is read before sign-in.
 */
 Route::get('/config', [ConfigController::class, 'show']);
+
+/*
+| Where Flutterwave reports a payment.
+|
+| Unauthenticated because the provider has no session -- the verif-hash header
+| is the authentication, checked in FlutterwaveGateway. Throttled generously:
+| a provider legitimately retries, but this endpoint should not be a free way
+| to fill the webhook_events table.
+*/
+Route::post('/webhooks/flutterwave', PaymentWebhookController::class)
+    ->middleware('throttle:120,1')
+    ->name('webhooks.flutterwave');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('/me', [AuthController::class, 'me']);
@@ -80,6 +100,50 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         ->name('files.show');
 
     /*
+    | Finding the customer in front of you, by exact phone number only.
+    | Throttled: it answers "is this number on the platform", and that should
+    | not be something anybody can sweep.
+    */
+    Route::get('/customers/lookup', CustomerLookupController::class)
+        ->middleware('throttle:30,1');
+
+    /*
+    | Orders.
+    |
+    | Every route is scoped to the person asking inside the controller; there
+    | is no parameter anywhere for whose orders to act on.
+    */
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+    Route::post('/orders/{order}/ready', [OrderController::class, 'markReady']);
+    Route::post('/orders/{order}/collected', [OrderController::class, 'markCollected']);
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+    /*
+    | The tracker. One tap by the tailor, one notification to the customer.
+    | Both sides read the list; only the tailor writes it.
+    */
+    Route::get('/orders/{order}/steps', [OrderStepController::class, 'index']);
+    Route::put('/orders/{order}/steps/{step}', [OrderStepController::class, 'update']);
+
+    Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm']);
+    Route::post('/orders/{order}/release', [OrderController::class, 'release']);
+
+    /*
+    | Where a tailor is paid. Resolving is separate from saving so she sees
+    | the name the bank returned before anything is stored.
+    */
+    Route::get('/banks', [BankAccountController::class, 'banks']);
+    Route::get('/profile/bank', [BankAccountController::class, 'show']);
+    Route::post('/profile/bank/resolve', [BankAccountController::class, 'resolve'])
+        ->middleware('throttle:20,1');
+    Route::post('/profile/bank', [BankAccountController::class, 'store'])
+        ->middleware('throttle:20,1');
+
+    Route::post('/orders/{order}/pay', [PaymentController::class, 'initialise']);
+    Route::post('/payments/confirm', [PaymentController::class, 'confirm']);
+
+    /*
     | The step library and arrangements.
     |
     | Reading is open to any signed-in account: a customer watching her order
@@ -102,6 +166,18 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::put('/garment-types/reorder', [GarmentTypeController::class, 'reorder']);
         Route::put('/garment-types/{garmentType}', [GarmentTypeController::class, 'update']);
         Route::post('/garment-types/{garmentType}/retire', [GarmentTypeController::class, 'retire']);
+
+        /*
+        | Every order, not just the ones an admin is on -- a refund cannot be
+        | decided without seeing what was paid. Declared before the refund
+        | route so the more specific path is not shadowed.
+        */
+        Route::get('/orders', [AdminOrderController::class, 'index']);
+        Route::get('/orders/{order}', [AdminOrderController::class, 'show']);
+
+        // Refunds are a judgement about work already done, so an admin makes
+        // them. Partial is the common case.
+        Route::post('/orders/{order}/refund', RefundController::class);
 
         Route::get('/steps', [ProductionStepController::class, 'index']);
         Route::post('/steps', [ProductionStepController::class, 'store']);

@@ -45,6 +45,29 @@ class PlatformSetting extends Model
     /** Below this many completed steps, the proof ratio is not trusted either way. */
     public const REVIEW_PROOF_MIN_STEPS = 'review_proof_min_steps';
 
+    /**
+     * How long a finished garment waits before collection is overdue.
+     *
+     * Starts when the tailor marks an order ready. It is what turns "the
+     * customer never came back" from a problem she absorbs into one the
+     * platform can send reminders about and, eventually, record.
+     */
+    public const COLLECTION_DEADLINE_DAYS = 'collection_deadline_days';
+
+    /**
+     * How long escrow is held after collection before the tailor may release
+     * it herself.
+     *
+     * A window for the customer to say something is wrong. She can also
+     * confirm immediately, which releases at once -- the wait is the fallback
+     * for silence, not the normal path.
+     *
+     * Deliberately computed from `collected_at` rather than scheduled. A dead
+     * cron then means a tailor taps a button instead of money being stuck,
+     * which is the same reasoning as suspensions lapsing on use.
+     */
+    public const ESCROW_HOLD_DAYS = 'escrow_hold_days';
+
     /** How long a suspension runs when an admin does not say otherwise. */
     public const DEFAULT_SUSPENSION_DAYS = 'default_suspension_days';
 
