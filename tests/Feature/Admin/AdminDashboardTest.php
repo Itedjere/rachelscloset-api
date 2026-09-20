@@ -184,7 +184,13 @@ class AdminDashboardTest extends TestCase
     {
         $health = collect($this->dashboard()['health']);
 
-        $this->assertCount(3, $health);
+        /*
+         * One row per scheduled command, and the count is asserted on
+         * purpose: a command added to the schedule without a heartbeat here
+         * is one that can stop without anybody noticing, which is the exact
+         * failure this panel exists to prevent.
+         */
+        $this->assertCount(4, $health);
         $this->assertTrue($health->every(fn ($row) => $row['state'] === 'never'));
     }
 

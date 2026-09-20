@@ -196,6 +196,11 @@ class DashboardController extends Controller
                 'label' => 'Listing reminders sent',
                 'note' => 'A courtesy — the dashboard banner tells her regardless.',
             ],
+            [
+                'key' => PlatformSetting::COLLECTION_REMINDED_AT,
+                'label' => 'Collection reminders sent',
+                'note' => 'A courtesy — overdue orders are counted above regardless.',
+            ],
         ])->map(function (array $row) {
             $raw = PlatformSetting::get($row['key']);
             $at = $raw ? Carbon::parse($raw) : null;

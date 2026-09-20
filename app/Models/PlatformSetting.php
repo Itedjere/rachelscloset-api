@@ -174,6 +174,8 @@ class PlatformSetting extends Model
 
     public const SUBSCRIPTIONS_REMINDED_AT = 'subscriptions_reminded_at';
 
+    public const COLLECTION_REMINDED_AT = 'collection_reminded_at';
+
     public static function get(string $key, mixed $default = null): mixed
     {
         return static::query()->where('key', $key)->value('value') ?? $default;

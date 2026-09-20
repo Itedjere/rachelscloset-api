@@ -63,6 +63,7 @@ class Order extends Model
             'escrow' => 'boolean',
             'due_date' => 'date',
             'collection_deadline' => 'date',
+            'collection_reminded_days' => 'integer',
             'ready_at' => 'datetime',
             'collected_at' => 'datetime',
             'received_at' => 'datetime',

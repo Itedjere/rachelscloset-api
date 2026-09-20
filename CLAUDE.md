@@ -180,6 +180,11 @@ down a phone line), customer, tailor, garment type, `amount`, `deposit_amount`,
 `cancelled` and `disputed`), `collection_deadline`, and `steps_total` /
 `steps_completed` / `steps_with_photo` which only Section 9 writes.
 
+`orders.collection_reminded_days` — how near the deadline she was last
+reminded, counting down. The analogue of `subscriptions.last_reminder_days`,
+nullable with no default because null means never reminded and a default of 0
+would read as "already told her it is overdue".
+
 `payments` — carries `purpose enum('order','subscription')` and a nullable
 `subscription_id` from birth so Section 14 needs no ALTER on a table holding
 real money. **`provider_reference` is unique**; that is the idempotency.
@@ -391,7 +396,8 @@ shell, staff roles, settings, suspensions, public Blade site.
 10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions ✅ · 15 Fashion House
 directory ✅ · 16 QR + business card ✅ · 17 admin dashboard ✅.
 
-**After 17, unnumbered:** PIN reset ✅ · disputes + the receipt clock ✅.
+**After 17, unnumbered:** PIN reset ✅ · disputes + the receipt clock ✅ ·
+collection reminders ✅.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
 
@@ -526,6 +532,58 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Collection reminders — done
+
+`orders:remind-collection` on the 09:30 schedule, `CollectionReminder`,
+`orders.collection_reminded_days`, `COLLECTION_REMINDED_AT`. 18 new tests, 410
+total.
+
+**The brief's second problem, finally acted on.** "Customer won't collect or
+can't pay" was answered by "`ready` state, collection deadline, reminders,
+optional deposit" — and `ready` has existed since Section 5, the deadline
+since Section 5, and `collection_reminder` has been mapped in
+`NotificationCategories` since Section 2. Nothing ever sent it. A tailor's shop
+filled with finished garments and her only recourse was to keep ringing.
+
+- **A courtesy, like the other three scheduled commands.** The deadline is a
+  date on a row and the admin dashboard counts overdue orders by comparing it,
+  whether or not this runs. Same shape as `payouts:release-due` and
+  `subscriptions:remind`, same reason.
+- **`collection_reminded_days` is the exact analogue of
+  `subscriptions.last_reminder_days`** and exists for the same failure: a cron
+  firing twice in a day is the ordinary way these are misconfigured. It counts
+  down, and the command sends the smallest milestone still owed, so four days
+  of downtime produce one nearest warning rather than a stale burst.
+- **ZERO IS TERMINAL, and this is the decision that matters most.** An
+  uncollected garment never resolves itself the way a lapsed subscription
+  does — nothing ever moves it out of `ready`. A command with no last milestone
+  would notify the same two people every night indefinitely, which is how
+  somebody learns to ignore all of them, including the ones about her next
+  order. Said once, then the order sits on the admin dashboard where a person
+  can ring. There is a test that runs the command seven nights in a row.
+- **The deadline day is not overdue, and this was a bug I shipped and caught.**
+  With milestones `[3, 1, 0]`, `$left` reaches 0 at midnight on the day she may
+  still collect, so the message told her the garment "was due" on the very day
+  it was due. Overdue now begins the day after: the list is `[3, 1]` and zero
+  is assigned only when `$left < 0`.
+- **NO MESSAGE SAYS "TOMORROW".** Every one names the date. A command that is
+  explicitly allowed to miss a night cannot use a relative word — it is a lie
+  waiting for the first time the cron does not run — and a date is what she
+  would write down anyway. Pinned by a test that sweeps every milestone for
+  "tomorrow" and "today".
+- **One class, two audiences.** At the overdue milestone the tailor is told as
+  well, and told something different: the customer's phone number. Same answer
+  the dispute screen gives — when a thing is stuck, the platform's job is to
+  make the phone call possible. She is not nudged at three and one days, where
+  it would be noise about an order already on her own list.
+- **"Won't collect OR CAN'T PAY" is one problem, not two.** An outstanding
+  balance is named in the message, days ahead. Somebody who owes money and does
+  not know it walks to the shop, finds out at the counter and goes home again.
+- **A fourth health row**, and the dashboard test now asserts the *count* of
+  them on purpose: a command added to the schedule without a heartbeat is one
+  that can stop without anybody noticing, which is the failure that panel
+  exists to prevent.
 
 ### Disputes and the receipt clock — done
 
