@@ -506,6 +506,58 @@ sections that trigger them.
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
 
+### PIN reset — done
+
+The hole the rest of the design would otherwise leave. 17 new tests, 363
+total.
+
+Sign-in is a phone number and six digits; nothing on this platform sends an
+SMS or requires an email address, so the ordinary "reset link in your inbox"
+does not exist. Without a replacement, a tailor who forgets her PIN is locked
+out of her own business permanently.
+
+**All three channels cost nothing per use, and that is the point rather than a
+happy accident.** A recovery route with a per-message bill is one that gets
+switched off when money is tight, which is exactly when somebody can least
+afford to lose her livelihood to a forgotten number.
+
+- six digits read down an ordinary phone call — the admin's airtime, not a
+  platform bill;
+- a `wa.me` deep link from the admin's **own** WhatsApp. Not the Business
+  API: no per-conversation fee, no Meta account, no approval;
+- a QR on screen, for the rare case they are in the same room.
+
+Nothing here uses SMS (₦3–5 a message), the WhatsApp Business API (billed per
+conversation), or email (near-free and useless, since most tailors have no
+address).
+
+- **Admin-issued, and that is a security decision** rather than an
+  organisational one. A claim code opens a profile nobody has used; a reset
+  code opens an account with orders, money and measurements in it. A tailor
+  able to reset her own customer's PIN could take that account over, and she
+  is the person with the motive.
+- **Four hours, not forty-eight.** A claim code accommodates "I will do it
+  when I get home"; a reset is issued while an admin is on the phone with the
+  person who needs it, so there is nothing to accommodate.
+- **Every other session dies on reset.** If she forgot her PIN the old tokens
+  are hers and worthless; if somebody else had got in — which is a reason to
+  reset — leaving their session alive would make the whole thing theatre.
+  Tokens are deleted rather than left to expire, because Sanctum tokens here
+  do not expire. Any other outstanding reset code is spent at the same time.
+- **She is told, and it cannot be switched off.** `pin_reset` sits in the
+  ACCOUNT category, mapped in Section 2 against this section. It is the one
+  message that tells somebody their account was taken over, so a setting able
+  to silence it would silence exactly the warning that matters.
+- **A claim token will not work on the reset endpoint, or the reverse.**
+  Tested both ways.
+
+**A testing note worth keeping:** `Sanctum::actingAs` fakes the guard for the
+remainder of a test, so a later bearer-token request is answered as the acting
+user and a "this token should now be dead" assertion passes without proving
+anything. Issue tokens directly and call `$this->app['auth']->forgetGuards()`
+before re-checking — the guard also caches the user it resolved on the
+previous request in the same test.
+
 ### Section 17 — the admin dashboard — done
 
 The last section. 24 new tests, 346 total.
@@ -835,9 +887,8 @@ the JSON handler ran, so it came back 500 instead of 401. Not hypothetical:
 `GET /api/files/{path}` returns a file, which is exactly the kind of URL a
 browser fetches directly. `redirectGuestsTo` now returns null for `api/*`.
 
-**Deferred deliberately:** PIN reset over the same three channels. It is the
-thing that stops a tailor with no email address being locked out forever, and
-`claim_tokens.purpose` is already there for it.
+**Deferred at the time, built later:** PIN reset over the same three
+channels, using `claim_tokens.purpose`. See its own section above.
 
 ### Section 10 — photo proof — done
 

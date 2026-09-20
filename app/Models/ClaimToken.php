@@ -31,6 +31,17 @@ class ClaimToken extends Model
      */
     public const LIFETIME_HOURS = 48;
 
+    /**
+     * A PIN reset lives far less long, on purpose.
+     *
+     * A claim code opens an empty profile nobody has used. A reset code opens
+     * an account with orders, money and measurements already in it, and it is
+     * issued while an admin is on the phone with the person who needs it --
+     * so there is no "I will do it when I get home" to accommodate. Four
+     * hours is generous for a call that is happening now.
+     */
+    public const RESET_LIFETIME_HOURS = 4;
+
     protected $guarded = ['id'];
 
     /** @return array<string, string> */
@@ -81,7 +92,9 @@ class ClaimToken extends Model
             'token_hash' => hash('sha256', $linkToken),
             'code_hash' => Hash::make($code),
             'purpose' => $purpose,
-            'expires_at' => now()->addHours(self::LIFETIME_HOURS),
+            'expires_at' => now()->addHours(
+                $purpose === self::PIN_RESET ? self::RESET_LIFETIME_HOURS : self::LIFETIME_HOURS,
+            ),
             'issued_by' => $issuedBy?->id,
         ]);
 

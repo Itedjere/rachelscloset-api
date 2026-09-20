@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\OrderStepController;
 use App\Http\Controllers\Api\OrderStepPhotoController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaymentWebhookController;
+use App\Http\Controllers\Api\PinResetController;
 use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PushSubscriptionController;
@@ -79,6 +80,18 @@ Route::post('/webhooks/flutterwave', PaymentWebhookController::class)
 */
 Route::get('/claim/{token}', [ClaimController::class, 'preview'])->middleware('throttle:20,1');
 Route::post('/claim', [ClaimController::class, 'claim'])->middleware('throttle:8,1');
+
+/*
+| Getting back in after forgetting a PIN.
+|
+| Unauthenticated for the same reason as claiming, and throttled harder than
+| anything else here: this opens an account that already has orders, money and
+| measurements in it, and six digits against a phone number is a million
+| guesses. The limit, the four-hour expiry and single use are the three things
+| standing in front of that.
+*/
+Route::get('/reset/{token}', [PinResetController::class, 'preview'])->middleware('throttle:20,1');
+Route::post('/reset', [PinResetController::class, 'reset'])->middleware('throttle:6,1');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('/me', [AuthController::class, 'me']);
@@ -294,6 +307,13 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::post('/users/{user}/suspend', [AdminUserController::class, 'suspend']);
         Route::post('/users/{user}/reinstate', [AdminUserController::class, 'reinstate']);
+
+        /*
+        | A way back in for somebody locked out. Admin-issued on purpose: a
+        | claim code opens an empty profile, this opens a real account.
+        */
+        Route::post('/users/{user}/pin-reset', [AdminUserController::class, 'issuePinReset'])
+            ->middleware('throttle:20,1');
 
         /*
         | The numbers an admin is expected to revise. Only an allowlist is

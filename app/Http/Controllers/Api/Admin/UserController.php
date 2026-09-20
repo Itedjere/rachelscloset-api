@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClaimToken;
 use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Notifications\AccountReinstated;
 use App\Notifications\AccountSuspended;
 use App\Rules\NigerianPhone;
+use App\Services\Qr\QrCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -129,6 +131,51 @@ class UserController extends Controller
         $user->notify(new AccountReinstated($user->fresh()));
 
         return response()->json(['data' => $this->shape($user->fresh())]);
+    }
+
+    /**
+     * Issue a way back in for somebody who has forgotten her PIN.
+     *
+     * Sign-in is a phone number and six digits, and nothing on this platform
+     * sends an SMS or requires an email address -- so without this, a tailor
+     * who forgets her number is locked out of her own business permanently.
+     *
+     * All three channels are free, and that is the point rather than a happy
+     * accident: a recovery route with a per-use cost is one that gets turned
+     * off when money is tight, which is exactly when somebody can least
+     * afford to lose her livelihood to a forgotten number.
+     *
+     * ADMIN-ISSUED, which is a security decision. A claim code opens an empty
+     * profile; this opens an account with orders, money and measurements in
+     * it. A tailor able to reset her own customer's PIN could take that
+     * account over, and she is the person with the motive.
+     */
+    public function issuePinReset(Request $request, User $user, QrCode $qr): JsonResponse
+    {
+        // An account that has never been set up is claimed, not reset. Saying
+        // so beats issuing a code that fails for a reason nobody can see.
+        abort_unless($user->isClaimed(), 422, 'That account has never been set up. Send a set-up invitation instead.');
+
+        $issued = ClaimToken::issue($user, $request->user(), ClaimToken::PIN_RESET);
+
+        $link = rtrim((string) config('app.frontend_url'), '/').'/reset/'.$issued['link_token'];
+
+        return response()->json(['data' => [
+            'code' => $issued['code'],
+            'link' => $link,
+            'qr_svg' => $qr->svg($link),
+            /*
+             * The admin's own WhatsApp, with her number prefilled. Not the
+             * Business API -- it opens the app she already has, with a
+             * message ready to send, and costs nobody anything.
+             */
+            'whatsapp_url' => 'https://wa.me/'.preg_replace('/\D/', '', $user->phone)
+                .'?text='.rawurlencode(
+                    "Hello {$user->name}, here is your way back into Rachel's Closet: {$link}"
+                ),
+            'expires_at' => $issued['token']->expires_at,
+            'expires_in_hours' => ClaimToken::RESET_LIFETIME_HOURS,
+        ]]);
     }
 
     /** @return array<string, mixed> */
