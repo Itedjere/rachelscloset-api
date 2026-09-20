@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'purpose', 'order_id', 'subscription_id', 'payer_id',
+    'purpose', 'order_id', 'subscription_id', 'plan', 'payer_id',
     'provider', 'provider_reference', 'amount', 'status', 'paid_at',
 ])]
 class Payment extends Model

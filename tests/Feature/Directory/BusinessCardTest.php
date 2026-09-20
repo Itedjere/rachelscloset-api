@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Directory;
 
+use App\Models\Subscription;
 use App\Models\TailorProfile;
 use App\Models\User;
 use App\Services\Qr\QrCode;
@@ -31,6 +32,12 @@ class BusinessCardTest extends TestCase
             'state' => 'Lagos',
             'location' => 'Ikeja',
         ]);
+
+        // Listed, because the listing is what a subscription buys.
+        Subscription::forTailor($user)->forceFill([
+            'current_period_end' => now()->addDays(30),
+            'grace_ends_at' => now()->addDays(37),
+        ])->save();
 
         return $user;
     }

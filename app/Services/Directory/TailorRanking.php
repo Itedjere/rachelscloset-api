@@ -78,12 +78,18 @@ class TailorRanking
                 ->where('role', User::ROLE_TAILOR)
                 ->where('status', User::STATUS_ACTIVE))
             /*
-             * Section 14 adds the subscription check here, and here only: a
-             * lapsed subscription hides a tailor from the directory and
-             * changes nothing else -- not her orders, not her measurements,
-             * not her money. Until that section exists there is nothing to
-             * lapse, so everybody active is listed.
+             * The subscription gate, here and nowhere else. A lapse hides a
+             * tailor from the directory and changes nothing else -- not her
+             * orders, not her measurements, not her money, not her own page.
+             *
+             * Compared against TIMESTAMPS, never against subscriptions.status.
+             * The label is only as fresh as the last thing that recomputed it,
+             * and on a host with no worker that can be never -- so a tailor
+             * whose term ended last night is out of the directory this
+             * morning whether or not anything has run.
              */
+            ->when($this->requiresSubscription(), fn (Builder $q) => $q
+                ->whereHas('user.subscription', fn (Builder $s) => $s->covering()))
             ->withCount(['reviewsReceived as review_count' => fn ($q) => $q
                 ->where('status', Review::PUBLISHED)
                 ->where('direction', Review::CUSTOMER_TO_TAILOR)]);
@@ -133,6 +139,17 @@ class TailorRanking
         )->orderBy('orders_completed', 'desc')->orderBy('id');
 
         return $query->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Whether the listing is something she has to buy.
+     *
+     * A setting because of the cold start: a directory that requires payment
+     * is empty on launch day, and nobody pays to join an empty platform.
+     */
+    private function requiresSubscription(): bool
+    {
+        return (bool) PlatformSetting::get(PlatformSetting::DIRECTORY_REQUIRES_SUBSCRIPTION, true);
     }
 
     /**

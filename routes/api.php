@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\StepTemplateController;
+use App\Http\Controllers\Api\SubscriptionController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -184,6 +185,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     | the finished garment. Her uploading is the consent -- nothing here
     | reaches into the private step photographs.
     */
+    /*
+    | Her listing in the Fashion House: what it costs, where she stands, and
+    | buying more days. Renewing is the same act as subscribing, so there is
+    | one endpoint rather than two.
+    */
+    Route::get('/subscription', [SubscriptionController::class, 'show']);
+    Route::post('/subscription/pay', [SubscriptionController::class, 'pay']);
+
     /*
     | Her business card: the words and the QR grid, drawn on a canvas in the
     | browser. The address on it is printed on cardboard and never moves.

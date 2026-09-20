@@ -277,6 +277,34 @@ unauthenticated route, because a stranger scanning a QR code has no account.
 Still resolved to a *visible* row, so a guessed path finds nothing and hiding
 a photograph takes it offline rather than merely off the page.
 
+### subscriptions, subscription_terms
+
+`subscriptions` — one per tailor. `current_period_end`, `grace_ends_at`,
+`status`, `last_reminder_days`.
+
+**THE TIMESTAMPS ARE THE TRUTH; `status` IS A LABEL.** Every decision — above
+all "is she in the directory" — compares timestamps, so a status left stale by
+a cron that stopped cannot list a tailor whose term ended. `scopeCovering()`
+is the only correct way to ask this in a query; if you are writing
+`where('status','active')`, that is the bug the class exists to prevent. There
+is a test that sets the label to `active` on an expired term and asserts she
+is still absent from the directory.
+
+`subscription_terms` — the ledger, never edited. **`payment_id` is UNIQUE**,
+and that is the whole idempotency story: a replayed webhook, a refreshed
+return page, and the two racing collapse onto one term. The direct analogue of
+`payments.provider_reference` and `reviews.order_id`.
+
+`days` and `amount` are **snapshotted**, so changing a price or a term length
+never moves days somebody already bought. `payment_id` is nullable so an admin
+can grant days without a charge — MySQL permits many NULLs in a unique index,
+which is exactly the behaviour wanted.
+
+`payments` gained a nullable `plan` column. It has carried `purpose` and
+`subscription_id` since Section 4 against this section; the plan was the one
+thing missing, and inferring it from the amount breaks the moment two prices
+match or one changes mid-payment.
+
 ### platform_settings
 `id, key (unique), value, updated_at`
 
@@ -341,7 +369,7 @@ shell, staff roles, settings, suspensions, public Blade site.
 
 **New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
-10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions · 15 Fashion House
+10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions ✅ · 15 Fashion House
 directory ✅ · 16 QR + business card ✅ · 17 admin dashboard.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
@@ -477,6 +505,52 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Section 14 — subscriptions — done
+
+Prepaid terms, not recurring billing. 23 new tests, 322 total.
+
+- **She buys days; nothing ever charges her again.** One ordinary Flutterwave
+  charge, exactly the one the order flow already makes. This is the decision
+  CLAUDE.md §5 is built on: expiry becomes a computed fact, so nothing has to
+  happen at the moment a term ends and a dead cron is a missed courtesy rather
+  than a broken invariant. It also means bank transfer, USSD and Opay all
+  work, where a recurring card charge fails silently on many Nigerian cards.
+- **Terms stack.** A yearly bought over a running monthly starts when that one
+  ends, so upgrading is just "buy a yearly", renewing early loses nothing, and
+  there is no proration to get wrong. Verified live: 30 + 365 = 395 days, the
+  second term beginning exactly where the first ended.
+- **One term per payment, enforced by the index.** `StartTerm` checks first so
+  the ordinary replay is a quiet no-op rather than an exception in a log
+  nobody reads, but the unique constraint is the actual rule. Confirmed three
+  times against the live API: one term.
+- **The directory is what she buys**, and `TailorRanking` is the only place
+  that asks. A lapse hides her from the listing and changes nothing else — not
+  her orders, not her money, not her measurements, and not the page a printed
+  card points at, which still resolves to the "not currently listed" state
+  Section 16 built for exactly this.
+- **Grace is not a lapse.** Seven days, because a Nigerian bank transfer
+  settling a day late must not delist somebody who paid on time, and the
+  difference between "her money is in transit" and "she has stopped paying" is
+  not one we can see.
+- **`directory_requires_subscription` is a setting, defaulting to on.** The
+  cold start is real: a directory that requires payment is empty on launch day
+  and nobody pays to join an empty platform. Turning it off runs an
+  introductory period with everyone listed, without a deploy and without
+  anything else about subscriptions changing.
+- **Reminders at T−7/−3/−1, and they are a courtesy.** `subscriptions:remind`
+  at 09:00 — morning rather than the small hours, because a 3am notification
+  is one that gets swiped away. `last_reminder_days` stops a cron firing twice
+  from telling her twice, and the code sends the *smallest* milestone still
+  owed so four days of downtime produce "one day left" rather than a stale
+  "seven days left" followed by three more. A dashboard banner says the same
+  thing to anybody who signs in, which is what makes the cron optional.
+- **An admin can grant days** without a payment — a goodwill month, a founding
+  tailor — and those stack like any other term.
+
+**Not built, deliberately:** auto-renew. The plan allows it later as a pure
+optimisation permitted to fail silently. It is not in v1 and nothing here
+assumes it.
 
 ### Section 16 — QR and the business card — done
 

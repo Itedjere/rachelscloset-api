@@ -5,6 +5,7 @@ namespace Tests\Feature\Directory;
 use App\Models\Order;
 use App\Models\PortfolioItem;
 use App\Models\Review;
+use App\Models\Subscription;
 use App\Models\TailorProfile;
 use App\Models\User;
 use App\Services\Directory\TailorRanking;
@@ -23,6 +24,13 @@ class DirectoryTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * A listed tailor.
+     *
+     * Subscribed, because Section 14 made the listing the thing she buys --
+     * a tailor with no term is not in the directory at all, which is tested
+     * where that rule lives rather than being worked around here.
+     */
     private function tailor(string $name, ?string $state = null, int $completed = 0): User
     {
         $user = User::factory()->tailor()->create();
@@ -34,6 +42,11 @@ class DirectoryTest extends TestCase
             'state' => $state,
             'orders_completed' => $completed,
         ]);
+
+        Subscription::forTailor($user)->forceFill([
+            'current_period_end' => now()->addDays(30),
+            'grace_ends_at' => now()->addDays(37),
+        ])->save();
 
         return $user;
     }

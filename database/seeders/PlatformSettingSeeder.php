@@ -26,6 +26,7 @@ class PlatformSettingSeeder extends Seeder
         PlatformSetting::PORTFOLIO_MAX_PER_ORDER => '5',
         PlatformSetting::PORTFOLIO_MAX_OWN => '5',
         PlatformSetting::DIRECTORY_NEWCOMER_BONUS => '0.2',
+        PlatformSetting::DIRECTORY_REQUIRES_SUBSCRIPTION => '1',
         PlatformSetting::NOTIFICATION_READ_RETENTION_DAYS => '14',
         PlatformSetting::NOTIFICATION_UNREAD_RETENTION_DAYS => '30',
     ];

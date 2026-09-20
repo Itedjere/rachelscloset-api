@@ -103,6 +103,20 @@ class PlatformSetting extends Model
      */
     public const DIRECTORY_NEWCOMER_BONUS = 'directory_newcomer_bonus';
 
+    /**
+     * Whether a tailor must be subscribed to appear in the directory.
+     *
+     * The listing IS the thing she buys -- it is the whole revenue model, and
+     * §3 says a lapse hides her from the directory and nothing else.
+     *
+     * It is a setting rather than a constant because of the cold start: on
+     * launch day a directory that requires payment is empty, and tailors do
+     * not pay to join an empty platform. Turning this off runs an
+     * introductory period where everyone is listed, without a deploy and
+     * without anything else about subscriptions changing.
+     */
+    public const DIRECTORY_REQUIRES_SUBSCRIPTION = 'directory_requires_subscription';
+
     /** How long a suspension runs when an admin does not say otherwise. */
     public const DEFAULT_SUSPENSION_DAYS = 'default_suspension_days';
 

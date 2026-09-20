@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Payout;
 use App\Notifications\OrderPaid;
+use App\Services\Subscriptions\StartTerm;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -23,7 +24,10 @@ use Illuminate\Support\Facades\Log;
  */
 class ConfirmPayment
 {
-    public function __construct(private readonly PaymentGatewayManager $gateways) {}
+    public function __construct(
+        private readonly PaymentGatewayManager $gateways,
+        private readonly StartTerm $terms,
+    ) {}
 
     public function handle(string $reference): ?Payment
     {
@@ -86,9 +90,22 @@ class ConfirmPayment
 
             $payment->update(['status' => Payment::SUCCESSFUL, 'paid_at' => now()]);
 
-            // A subscription payment has no order. Section 14 mints the term.
             if ($payment->purpose === Payment::PURPOSE_ORDER && $payment->order_id) {
                 $this->applyToOrder($payment);
+            }
+
+            /*
+             * A subscription payment has no order; it buys days.
+             *
+             * StartTerm is idempotent on the payment -- subscription_terms
+             * has a unique index on payment_id -- so a webhook replayed by
+             * Flutterwave and a browser returning twice cannot between them
+             * mint two months. The lock above already prevents this branch
+             * running twice; the index is the guard that does not depend on
+             * the lock.
+             */
+            if ($payment->purpose === Payment::PURPOSE_SUBSCRIPTION) {
+                $this->terms->fromPayment($payment);
             }
 
             return $payment->fresh();

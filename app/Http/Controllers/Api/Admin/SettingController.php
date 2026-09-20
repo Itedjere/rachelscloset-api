@@ -39,6 +39,38 @@ class SettingController extends Controller
             'help' => 'Pictures of her wearing the finished garment. These carry the gallery.',
             'min' => 1, 'max' => 20, 'group' => 'Gallery',
         ],
+        PlatformSetting::SUBSCRIPTION_PRICE_MONTHLY => [
+            'label' => 'Monthly listing price (naira)',
+            'help' => 'What 30 days in the Fashion House costs.',
+            'min' => 0, 'max' => 1000000, 'group' => 'Listings',
+        ],
+        PlatformSetting::SUBSCRIPTION_PRICE_YEARLY => [
+            'label' => 'Yearly listing price (naira)',
+            'help' => 'Changing a price never moves a term somebody already bought.',
+            'min' => 0, 'max' => 10000000, 'group' => 'Listings',
+        ],
+        PlatformSetting::SUBSCRIPTION_MONTHLY_DAYS => [
+            'label' => 'Days in a monthly term',
+            'help' => 'Terms stack, so renewing early loses nothing.',
+            'min' => 1, 'max' => 400, 'group' => 'Listings',
+        ],
+        PlatformSetting::SUBSCRIPTION_YEARLY_DAYS => [
+            'label' => 'Days in a yearly term',
+            'help' => 'Terms stack, so renewing early loses nothing.',
+            'min' => 1, 'max' => 2000, 'group' => 'Listings',
+        ],
+        PlatformSetting::SUBSCRIPTION_GRACE_DAYS => [
+            'label' => 'Grace days after a term ends',
+            'help' => 'She stays listed. A bank transfer settling late must not delist her.',
+            'min' => 0, 'max' => 60, 'group' => 'Listings',
+        ],
+        PlatformSetting::DIRECTORY_REQUIRES_SUBSCRIPTION => [
+            'label' => 'Tailors must be subscribed to be listed (1 or 0)',
+            'help' => 'Set to 0 for an introductory period where everyone is listed. '
+                .'Nothing else about subscriptions changes.',
+            'min' => 0, 'max' => 1, 'group' => 'Listings',
+        ],
+
         PlatformSetting::REVIEW_PROOF_THRESHOLD => [
             'label' => 'Photographed work needed to publish 4 and 5 star reviews (%)',
             'help' => 'Below this, a high rating waits to be checked. Complaints always publish.',

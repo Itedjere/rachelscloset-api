@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PlatformSetting;
 use App\Models\PortfolioItem;
 use App\Models\Review;
 use App\Models\TailorProfile;
@@ -97,10 +98,11 @@ class DirectoryController extends Controller
          * She is still absent from the listing and from the sitemap. This is
          * only about the address somebody already has.
          *
-         * Section 14 adds the other reason to be unlisted -- a lapsed
-         * subscription -- to exactly this flag, and to nothing else.
+         * Two reasons to be unlisted, and they land on the same flag: a
+         * suspension, and a lapsed subscription. Neither touches anything
+         * else about her account.
          */
-        $listed = $tailor->isActive();
+        $listed = $tailor->isActive() && $this->subscriptionCovers($tailor);
 
         if (! $listed) {
             return view('public.tailor-unlisted', [
@@ -134,6 +136,23 @@ class DirectoryController extends Controller
     }
 
     /**
+     * Whether her listing is paid up.
+     *
+     * Reads the timestamps through Subscription::covers(), never the status
+     * label -- the label is only as fresh as the last thing that recomputed
+     * it. Grace counts: a bank transfer settling a day late must not take
+     * down the page a printed card points at.
+     */
+    private function subscriptionCovers(User $tailor): bool
+    {
+        if (! (bool) PlatformSetting::get(PlatformSetting::DIRECTORY_REQUIRES_SUBSCRIPTION, true)) {
+            return true;
+        }
+
+        return $tailor->subscription?->covers() ?? false;
+    }
+
+    /**
      * A sitemap, because the point of this section is being found.
      *
      * Generated on request rather than written to disk: there is no queue to
@@ -144,7 +163,13 @@ class DirectoryController extends Controller
         $profiles = TailorProfile::query()
             ->whereHas('user', fn ($q) => $q
                 ->where('role', User::ROLE_TAILOR)
-                ->where('status', User::STATUS_ACTIVE))
+                ->where('status', User::STATUS_ACTIVE)
+                // Unlisted pages still resolve, for the printed card -- but
+                // there is no reason to invite a crawler to one.
+                ->when(
+                    (bool) PlatformSetting::get(PlatformSetting::DIRECTORY_REQUIRES_SUBSCRIPTION, true),
+                    fn ($u) => $u->whereHas('subscription', fn ($s) => $s->covering()),
+                ))
             ->latest('updated_at')
             ->take(5000)
             ->get(['slug', 'updated_at']);

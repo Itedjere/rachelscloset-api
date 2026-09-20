@@ -115,6 +115,12 @@ class User extends Authenticatable
         );
     }
 
+    /** Her standing with the platform. Created on first sight, not at signup. */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
     /** Published or not; the directory scopes it. */
     public function reviewsReceived(): HasMany
     {
