@@ -9,6 +9,7 @@ use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Services\Orders\AssembleOrderSteps;
 use App\Services\Payments\ReleasePayout;
+use App\Services\Reviews\RecalculateTailorRating;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,6 +26,8 @@ use Illuminate\Validation\Rule;
  */
 class OrderController extends Controller
 {
+    public function __construct(private readonly RecalculateTailorRating $ratings) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $validated = $request->validate([
@@ -157,6 +160,10 @@ class OrderController extends Controller
             $release->handle($order->payout);
         }
 
+        // orders_completed on her public profile is derived from this status,
+        // so it moves here rather than drifting until somebody reviews her.
+        $this->ratings->handle($order->tailor);
+
         return $this->respond($request, $order);
     }
 
@@ -179,6 +186,7 @@ class OrderController extends Controller
 
         if ($order->status === Order::COLLECTED) {
             $order->forceFill(['status' => Order::COMPLETED, 'completed_at' => now()])->save();
+            $this->ratings->handle($order->tailor);
         }
 
         $release->handle($order->payout);

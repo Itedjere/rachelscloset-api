@@ -136,6 +136,12 @@ class Order extends Model
         return $this->hasOne(Payout::class);
     }
 
+    /** At most two: one each way. The unique index enforces it. */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     /** What has actually arrived, successful payments only. */
     public function paidTotal(): string
     {

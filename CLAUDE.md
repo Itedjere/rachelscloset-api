@@ -230,6 +230,25 @@ at issue; six digits is a million guesses, safe only because the endpoint is
 throttled and the row expires in 48 hours. The `purpose` column is there so
 PIN reset reuses this table rather than growing a second parallel mechanism.
 
+### reviews
+
+`order_id`, `direction` (customer_to_tailor|tailor_to_customer), `author_id`,
+`subject_id`, `rating`, `body`, `status` (published|held),
+`proof_ratio_snapshot`, `published_at`, `approved_by`, `approved_at`.
+`unique(order_id, direction)`.
+
+**Two-way**, because the platform has two problems: a tailor who does not
+start, and a customer who will not collect. A directory that rated only
+tailors would ask them to carry all the risk of meeting a stranger.
+
+`unique(order_id, direction)` is the analogue of
+`payments.provider_reference` — the constraint is the rule, so a double
+submit is a violation rather than a second opinion.
+
+**`proof_ratio_snapshot` is snapshotted even when the gate passes.** It is the
+basis on which a decision was made, and an order's photographs can be added
+to afterwards. Same reasoning as an order snapshotting its step labels.
+
 ### platform_settings
 `id, key (unique), value, updated_at`
 
@@ -294,7 +313,7 @@ shell, staff roles, settings, suspensions, public Blade site.
 
 **New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
-10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate · 14 subscriptions · 15 Fashion House
+10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions · 15 Fashion House
 directory · 16 QR + business card · 17 admin dashboard.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
@@ -430,6 +449,63 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Section 13 — two-way reviews and the proof gate — done
+
+22 new tests, 258 total. The settings the gate reads — `review_proof_threshold`
+(80) and `review_proof_min_steps` (3) — were seeded in Section 1 and finally
+have something to govern, and `review_received` was mapped into
+`NotificationCategories` in Section 2 against this section existing.
+
+**The gate exists for exactly one failure**: a tailor inventing orders with a
+confederate and giving herself five stars. What stops that is not moderation
+but evidence — a real order carries photographs, because Section 10 put a
+camera on every stage. Three deliberate narrowings, each because the broader
+version does harm:
+
+- **Only four and five stars.** A complaint always publishes. Holding a
+  one-star review reads as censorship, and a tailor who did no photo work is
+  precisely the one whose bad reviews most need to be seen. Gating both ends
+  of the scale would turn an anti-inflation measure into a reputation filter.
+- **Only reviews of a tailor.** A tailor rating a customer cannot inflate what
+  the directory ranks on, so gating it would be ceremony.
+- **Only orders with enough stages to judge.** Two stages with one photograph
+  is 50% and means nothing either way.
+
+- **A held review moves nothing and announces nothing.** Letting it touch the
+  average would defeat the gate entirely — the rating would rise the moment
+  the review was written. And telling a tailor about a review she cannot read,
+  which may never appear, would also leak its rating.
+- **The author sees her own held review**, so she is not left wondering
+  whether it saved. Nobody else does.
+- **There is no reject.** An admin releases a held review or leaves it held.
+  A button that permanently destroys somebody's opinion of a business is not
+  one this platform needs; the gate is for invented orders, not inconvenient
+  praise. The admin screen shows the numbers the gate looked at, so the
+  decision can be reviewed rather than merely taken.
+- **Reviewing opens at collection, not completion.** She knows whether the
+  garment is right the moment it is in her hands, and escrow may run for days
+  after that — waiting would collect reviews when nobody remembers the
+  fitting.
+- **`avg_rating` is recomputed from scratch** from published reviews only, and
+  `orders_completed` counts finished orders rather than reviews: a customer
+  who never gets round to reviewing has still had a garment made.
+
+**The proof ratio is capped at 100.** A tailor photographs a stage as she
+finishes the sleeve and ticks the circle later, so mid-order there can be more
+photographed stages than completed ones and the raw division reads as 150%.
+By review time the order is collected and the two are equal, so this changes
+no decision — it exists because a percentage over 100 on the admin screen
+reads as a bug. Found in live dev data, not by reasoning about it.
+
+**A CSS bug fixed on the way through:** `.field` styled `input` but not
+`textarea`, so every textarea rendered inline and unthemed — a small white box
+beside its label. It had gone unnoticed because a full-width input was what
+made that layout work at all, and this section added the first two textareas.
+
+**Still not built: disputes.** `Order::DISPUTED` remains a status nothing
+sets. The plan's admin route into measurement photographs needs one, so that
+rule stays closed — see Section 11.
 
 ### Section 11 — measurements, consent and the claim flow — done
 

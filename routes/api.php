@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\GarmentTypeController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductionStepController;
 use App\Http\Controllers\Api\Admin\RefundController;
+use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankAccountController;
 use App\Http\Controllers\Api\ClaimController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaymentWebhookController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PushSubscriptionController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\StepTemplateController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -173,6 +175,15 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::post('/orders/{order}/steps/{step}/photos', [OrderStepPhotoController::class, 'store']);
     Route::delete('/orders/{order}/steps/{step}/photos/{photo}', [OrderStepPhotoController::class, 'destroy']);
 
+    /*
+    | Reviews, both ways. Reading somebody's is open to any signed-in
+    | account, because published reviews are what the directory is made of;
+    | writing one is scoped to the two people on the order.
+    */
+    Route::get('/users/{user}/reviews', [ReviewController::class, 'index']);
+    Route::get('/orders/{order}/reviews', [ReviewController::class, 'forOrder']);
+    Route::post('/orders/{order}/reviews', [ReviewController::class, 'store']);
+
     Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm']);
     Route::post('/orders/{order}/release', [OrderController::class, 'release']);
 
@@ -225,6 +236,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         // Refunds are a judgement about work already done, so an admin makes
         // them. Partial is the common case.
         Route::post('/orders/{order}/refund', RefundController::class);
+
+        /*
+        | Held reviews. There is no reject: an admin releases one or leaves
+        | it held, because the gate is for invented orders rather than for
+        | inconvenient praise.
+        */
+        Route::get('/reviews', [AdminReviewController::class, 'index']);
+        Route::post('/reviews/{review}/release', [AdminReviewController::class, 'release']);
 
         Route::get('/steps', [ProductionStepController::class, 'index']);
         Route::post('/steps', [ProductionStepController::class, 'store']);
