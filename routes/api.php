@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductionStepController;
 use App\Http\Controllers\Api\Admin\RefundController;
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankAccountController;
 use App\Http\Controllers\Api\ClaimController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\OrderStepController;
 use App\Http\Controllers\Api\OrderStepPhotoController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\PaymentWebhookController;
+use App\Http\Controllers\Api\PortfolioController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReviewController;
@@ -176,6 +178,22 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::delete('/orders/{order}/steps/{step}/photos/{photo}', [OrderStepPhotoController::class, 'destroy']);
 
     /*
+    | The gallery. Two doors: the tailor adds her own so a new profile is
+    | worth visiting, and the customer adds photographs of herself wearing
+    | the finished garment. Her uploading is the consent -- nothing here
+    | reaches into the private step photographs.
+    */
+    Route::get('/portfolio', [PortfolioController::class, 'index']);
+    Route::post('/portfolio', [PortfolioController::class, 'store']);
+    Route::put('/portfolio/reorder', [PortfolioController::class, 'reorder']);
+    Route::delete('/portfolio/{item}', [PortfolioController::class, 'destroy']);
+    Route::post('/portfolio/{item}/hide', [PortfolioController::class, 'hide']);
+    Route::post('/portfolio/{item}/show', [PortfolioController::class, 'show']);
+
+    Route::get('/orders/{order}/photos', [PortfolioController::class, 'forOrder']);
+    Route::post('/orders/{order}/photos', [PortfolioController::class, 'storeForOrder']);
+
+    /*
     | Reviews, both ways. Reading somebody's is open to any signed-in
     | account, because published reviews are what the directory is made of;
     | writing one is scoped to the two people on the order.
@@ -242,6 +260,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         | it held, because the gate is for invented orders rather than for
         | inconvenient praise.
         */
+        /*
+        | The numbers an admin is expected to revise. Only an allowlist is
+        | writable: this table also holds machinery like
+        | notifications_pruned_at.
+        */
+        Route::get('/settings', [SettingController::class, 'index']);
+        Route::put('/settings', [SettingController::class, 'update']);
+
         Route::get('/reviews', [AdminReviewController::class, 'index']);
         Route::post('/reviews/{review}/release', [AdminReviewController::class, 'release']);
 

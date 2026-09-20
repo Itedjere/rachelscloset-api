@@ -249,6 +249,34 @@ submit is a violation rather than a second opinion.
 basis on which a decision was made, and an order's photographs can be added
 to afterwards. Same reasoning as an order snapshotting its step labels.
 
+### portfolio_items
+
+`tailor_id`, `order_id` (nullable), `uploaded_by`, `path`, `caption`,
+`position`, `hidden_at`.
+
+**Two sources, one table.** The tailor uploads her own so a profile is not
+empty on the day she joins; the customer uploads to a finished order — she
+wore the dress to a party and photographed it — and those land in the tailor's
+gallery. The second source is the good one: a garment being *worn* is what a
+prospective customer wants to see, it is evidence in a way a studio shot is
+not, and it needs no consent machinery because the customer choosing to upload
+IS the consent.
+
+Deliberately not `order_step_photos`, which Section 10 confined to the two
+people on an order — those are one customer's cloth photographed
+mid-construction and they stay private.
+
+`hidden_at` is the tailor's control over her own shopfront: she cannot delete
+a customer's photograph, but she can take it off her gallery. A public page
+somebody else can post to unconditionally is not one anybody would print on a
+business card.
+
+**Public files.** These are the only uploads `FileAccess` does not know about
+— `/api/files/portfolio/...` is refused. They are served by their own
+unauthenticated route, because a stranger scanning a QR code has no account.
+Still resolved to a *visible* row, so a guessed path finds nothing and hiding
+a photograph takes it offline rather than merely off the page.
+
 ### platform_settings
 `id, key (unique), value, updated_at`
 
@@ -314,7 +342,7 @@ shell, staff roles, settings, suspensions, public Blade site.
 **New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
 10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions · 15 Fashion House
-directory · 16 QR + business card · 17 admin dashboard.
+directory ✅ · 16 QR + business card · 17 admin dashboard.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
 
@@ -449,6 +477,62 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Section 15 — the Fashion House directory — done
+
+The public answer to "tailors lack visibility". 33 new tests, 289 total.
+
+- **Blade, and reachable without an account.** This is the page a QR code
+  printed on cardboard resolves to, and the reason the public site was built
+  server-rendered back in Section 3.5. `/tailors` filters by state and
+  searches business names; `/t/{slug}` is one tailor, with her gallery,
+  rating and published reviews. Plus `sitemap.xml`, `robots.txt` and
+  LocalBusiness structured data, because being found is the entire point.
+- **The slug never moves.** `TailorProfile::slugFor()` has said so since
+  Section 1; this is the section that makes it matter.
+- **A suspended tailor vanishes from the public site** and nothing else about
+  her account changes. Her orders and her money are untouched.
+- **Ranking is a Bayesian-adjusted average**, in one service with its inputs
+  in `platform_settings`, because the plan names this as where gaming will
+  happen. Each tailor starts with five notional reviews at the middle of the
+  scale, so a rating only moves as real evidence accumulates.
+- **The prior is the middle of the scale, NOT the platform mean.** The
+  textbook choice is the mean, and it is wrong here: in a population where
+  everybody is rated 4.8, a mean-based prior assumes a brand-new tailor is 4.8
+  too, so her first manufactured five-star review leaves her at 4.8 and she
+  outranks a house with twenty-six real ones. That is the exact failure the
+  formula exists to prevent, and it failed the first time it was tested.
+- **The newcomer allowance is sized against a real review.** It has to clear a
+  badly-rated tailor and stay *under* what one genuine five-star review earns
+  — against a prior of weight 5 at 3.5 that is 0.25, so the default is 0.2.
+  Anything at or above 0.25 makes an empty profile outrank somebody a real
+  customer praised. A test pins the ordering.
+- **Proximity is a filter, not a score.** We hold a state, not a coordinate,
+  so "near me" narrows the list rather than quietly reshuffling it — and a
+  boost would be meaningless on searches that already name a state.
+- **The gallery and lightbox are the landing page's**, reused unchanged. Any
+  `[data-lightbox-open]` button joins the set `motion.js` already drives, so
+  the profile page got keyboard navigation and Escape for free. The markup
+  moved to `partials/lightbox.blade.php` rather than being written twice.
+
+**An admin settings screen**, which Section 6 promised and never delivered:
+every number the seeder calls "an operational judgement" is now editable,
+grouped, saved per field on blur. Only an allowlist is writable — the table
+also holds machinery like `notifications_pruned_at`, and exposing all of it
+would let an admin edit a cron's bookkeeping while looking for a price.
+
+**Two things worth knowing about the environment**, neither a bug:
+
+- `php artisan serve` is single-threaded, so a gallery of images can queue
+  behind the page. It is not a problem on real hosting.
+- Chrome does not deliver IntersectionObserver callbacks or load
+  `loading="lazy"` images while a window is occluded
+  (`document.visibilityState === 'hidden'`). Reveals and images then appear
+  broken while they are not. Worth remembering before debugging the reveal
+  machinery again.
+
+**Also fixed:** `.pill` was used on the Section 11 consent screen and had never
+been defined, so it rendered as bare text.
 
 ### Section 13 — two-way reviews and the proof gate — done
 

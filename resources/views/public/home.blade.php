@@ -440,14 +440,6 @@
     {{-- =====================================================================
          Lightbox — one native <dialog> for the whole page
          ===================================================================== --}}
-    <dialog class="lightbox" data-lightbox aria-label="Larger photograph">
-        <img data-lightbox-image src="" alt="">
-        <div class="lightbox__bar">
-            <button type="button" data-lightbox-prev aria-label="Previous">&#8592;</button>
-            <button type="button" data-lightbox-next aria-label="Next">&#8594;</button>
-            <p data-lightbox-caption></p>
-            <button type="button" data-lightbox-close aria-label="Close">&#10005;</button>
-        </div>
-    </dialog>
+    @include('public.partials.lightbox')
 
 @endsection

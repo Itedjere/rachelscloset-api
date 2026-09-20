@@ -68,6 +68,41 @@ class PlatformSetting extends Model
      */
     public const ESCROW_HOLD_DAYS = 'escrow_hold_days';
 
+    /**
+     * How many photographs a customer may put on one finished order.
+     *
+     * Storage, not taste: shared hosting has a real quota and a gallery is
+     * the one place on this platform where pictures accumulate without an
+     * order to bound them. Five is enough to show a garment from every angle
+     * that matters. An admin can move it -- these are operational judgements,
+     * not constants.
+     */
+    public const PORTFOLIO_MAX_PER_ORDER = 'portfolio_max_per_order';
+
+    /**
+     * How many a tailor may upload to her own profile.
+     *
+     * Separate from the per-order cap so a tailor who has never taken an
+     * order still has a gallery worth visiting -- which is the whole point
+     * of a directory entry, and of the QR card that points at it.
+     */
+    public const PORTFOLIO_MAX_OWN = 'portfolio_max_own';
+
+    /**
+     * How far a tailor with no completed orders is lifted in the directory.
+     *
+     * Without it a new tailor is last forever and can never earn the reviews
+     * that would move her -- a closed shop, and a subscription worth nothing
+     * to the people most likely to buy one.
+     *
+     * The size matters more than it looks. It has to clear a badly-rated
+     * tailor and stay UNDER what a single genuine review earns, or an empty
+     * profile outranks somebody a real customer actually praised. Against
+     * the prior (weight 5 at 3.5) a first five-star review is worth 0.25, so
+     * anything at or above that inverts the order. Checked by test.
+     */
+    public const DIRECTORY_NEWCOMER_BONUS = 'directory_newcomer_bonus';
+
     /** How long a suspension runs when an admin does not say otherwise. */
     public const DEFAULT_SUSPENSION_DAYS = 'default_suspension_days';
 

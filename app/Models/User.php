@@ -115,6 +115,18 @@ class User extends Authenticatable
         );
     }
 
+    /** Published or not; the directory scopes it. */
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(Review::class, 'subject_id');
+    }
+
+    /** Her public gallery. */
+    public function portfolioItems(): HasMany
+    {
+        return $this->hasMany(PortfolioItem::class, 'tailor_id');
+    }
+
     public function isCustomer(): bool
     {
         return $this->role === self::ROLE_CUSTOMER;

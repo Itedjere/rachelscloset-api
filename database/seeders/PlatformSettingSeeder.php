@@ -23,6 +23,9 @@ class PlatformSettingSeeder extends Seeder
         PlatformSetting::DEFAULT_SUSPENSION_DAYS => '14',
         PlatformSetting::COLLECTION_DEADLINE_DAYS => '14',
         PlatformSetting::ESCROW_HOLD_DAYS => '3',
+        PlatformSetting::PORTFOLIO_MAX_PER_ORDER => '5',
+        PlatformSetting::PORTFOLIO_MAX_OWN => '5',
+        PlatformSetting::DIRECTORY_NEWCOMER_BONUS => '0.2',
         PlatformSetting::NOTIFICATION_READ_RETENTION_DAYS => '14',
         PlatformSetting::NOTIFICATION_UNREAD_RETENTION_DAYS => '30',
     ];
