@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\DisputeController as AdminDisputeController;
 use App\Http\Controllers\Api\Admin\GarmentTypeController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductionStepController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Api\BusinessCardController;
 use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\CustomerLookupController;
+use App\Http\Controllers\Api\DisputeController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\MeasurementAccessController;
 use App\Http\Controllers\Api\MeasurementController;
@@ -233,6 +235,17 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('/orders/{order}/reviews', [ReviewController::class, 'forOrder']);
     Route::post('/orders/{order}/reviews', [ReviewController::class, 'store']);
 
+    // Hers, and what starts the escrow clock. Not the same as saying she
+    // is happy with it.
+    Route::post('/orders/{order}/received', [OrderController::class, 'markReceived']);
+
+    /*
+    | Something is wrong. Raising one freezes the money -- that is what it is
+    | for. The deciding is done by telephone.
+    */
+    Route::get('/orders/{order}/dispute', [DisputeController::class, 'forOrder']);
+    Route::post('/orders/{order}/dispute', [DisputeController::class, 'store']);
+
     Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm']);
     Route::post('/orders/{order}/release', [OrderController::class, 'release']);
 
@@ -298,6 +311,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         | what would make a dead cron invisible.
         */
         Route::get('/dashboard', DashboardController::class);
+
+        /*
+        | Disputes: both phone numbers and what is held, because settling one
+        | is two calls. Resolving carries out whatever was agreed on them.
+        */
+        Route::get('/disputes', [AdminDisputeController::class, 'index']);
+        Route::post('/orders/{order}/dispute', [AdminDisputeController::class, 'store']);
+        Route::post('/disputes/{dispute}/resolve', [AdminDisputeController::class, 'resolve']);
 
         /*
         | People. A deliberate widening of the ordinary scoping -- everywhere

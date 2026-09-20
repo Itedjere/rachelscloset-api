@@ -65,6 +65,7 @@ class Order extends Model
             'collection_deadline' => 'date',
             'ready_at' => 'datetime',
             'collected_at' => 'datetime',
+            'received_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
@@ -136,6 +137,15 @@ class Order extends Model
         return $this->hasOne(Payout::class);
     }
 
+    /**
+     * At most one OPEN at a time, which the schema cannot express -- see the
+     * migration. Resolved ones are kept: what was decided is the record.
+     */
+    public function disputes(): HasMany
+    {
+        return $this->hasMany(Dispute::class);
+    }
+
     /** At most two: one each way. The unique index enforces it. */
     public function reviews(): HasMany
     {
@@ -179,9 +189,48 @@ class Order extends Model
             return false;
         }
 
-        $days = (int) PlatformSetting::get(PlatformSetting::ESCROW_HOLD_DAYS, 3);
+        /*
+         * AN OPEN DISPUTE FREEZES THE MONEY, and this is the single place
+         * the whole platform asks whether it may move -- the nightly sweep,
+         * the tailor's own button and the customer's "I am happy" all come
+         * through here. Without this a dispute would be a complaint form.
+         */
+        if ($this->hasOpenDispute()) {
+            return false;
+        }
 
-        return $this->collected_at->addDays($days)->isPast();
+        $hold = (int) PlatformSetting::get(PlatformSetting::ESCROW_HOLD_DAYS, 3);
+
+        /*
+         * The clock runs from the customer confirming the garment reached
+         * her, NOT from the tailor handing it over. For somebody in the same
+         * town those are one moment; for the remote customer this platform
+         * exists to serve, the tailor posts it and the parcel takes a week.
+         * Running from dispatch meant the money could be gone before she
+         * opened the box.
+         */
+        if ($this->received_at !== null) {
+            return $this->received_at->addDays($hold)->isPast();
+        }
+
+        /*
+         * She has not confirmed. A backstop from dispatch, so a customer who
+         * has simply gone quiet cannot strand a tailor's money for ever.
+         */
+        $backstop = (int) PlatformSetting::get(PlatformSetting::ESCROW_RECEIPT_BACKSTOP_DAYS, 21);
+
+        return $this->collected_at->addDays($backstop)->isPast();
+    }
+
+    /** Somebody has said something is wrong and nobody has decided yet. */
+    public function hasOpenDispute(): bool
+    {
+        return $this->disputes()->where('status', Dispute::OPEN)->exists();
+    }
+
+    public function openDispute(): ?Dispute
+    {
+        return $this->disputes()->where('status', Dispute::OPEN)->latest('id')->first();
     }
 
     public function isEscrow(): bool

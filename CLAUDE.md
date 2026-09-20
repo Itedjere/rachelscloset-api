@@ -305,6 +305,25 @@ which is exactly the behaviour wanted.
 thing missing, and inferring it from the amount breaks the moment two prices
 match or one changes mid-payment.
 
+### disputes, and orders.received_at
+
+`disputes` — `order_id`, `raised_by` (nullOnDelete: the record of the
+complaint outlives the account), `reason`, `status enum(open|resolved)`,
+`outcome enum(refunded|released|withdrawn)`, `refunded_amount`,
+`resolution_note`, `resolved_by`, `resolved_at`, timestamps. Indexed on
+`(order_id, status)` and on `status` alone, which is the admin queue.
+
+**One open dispute per order is not expressible here** — MySQL has no partial
+unique index — so it is enforced by a lock and a re-check in
+`DisputeController`, and the migration says so.
+
+`orders.received_at` — nullable, after `collected_at`. **They are two
+different events**: the tailor handing the garment over, and the customer
+having it. For a garment collected in the shop they are the same instant and
+both are written at once; for one posted, `received_at` stays null until she
+says it arrived, and `ESCROW_RECEIPT_BACKSTOP_DAYS` (21) stops a silent
+customer stranding the tailor's money.
+
 ### platform_settings
 `id, key (unique), value, updated_at`
 
@@ -371,6 +390,8 @@ shell, staff roles, settings, suspensions, public Blade site.
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
 10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions ✅ · 15 Fashion House
 directory ✅ · 16 QR + business card ✅ · 17 admin dashboard ✅.
+
+**After 17, unnumbered:** PIN reset ✅ · disputes + the receipt clock ✅.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
 
@@ -505,6 +526,83 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Disputes and the receipt clock — done
+
+`disputes`, `orders.received_at`, `ESCROW_RECEIPT_BACKSTOP_DAYS`. The customer
+side, the admin queue, and the freeze that ties them to the money. 29 new
+tests, 392 total.
+
+**THE PLATFORM DOES NOT ADJUDICATE.** Raising a dispute freezes the money and
+puts both phone numbers in front of a person; the calls decide, and the screen
+carries out what was agreed. That is how the business already resolves these,
+and a structured evidence exchange with uploads and categories would be
+inventing a process nobody asked for and few of these users could work. The
+whole customer-facing surface is one button and one sentence, because the next
+thing that happens is somebody telephoning her.
+
+- **`Order::escrowReleaseDue()` is the single place the platform asks whether
+  money may move**, so adding one `hasOpenDispute()` check there froze all four
+  release routes at once — the nightly sweep, the tailor's own button, the
+  customer's "I am happy", and the order's completion. That is the payoff of
+  Section 5's decision to compute release rather than schedule it.
+- **Raising a dispute does not move the order's status.** The `disputed` state
+  has been in the enum since Section 4 and is still unused: the order genuinely
+  is collected, and rewriting its state would lose that. The freeze lives in
+  `escrowReleaseDue()`, which is the only thing it needs to reach.
+- **`received_at` exists because a parcel in the post is not a garment in her
+  hands.** The escrow clock used to run from `collected_at`, which is the
+  tailor tapping a button — fine in a shop, wrong for a customer four hundred
+  kilometres away who has a tracking number and a week to wait. The clock now
+  runs from receipt, with `ESCROW_RECEIPT_BACKSTOP_DAYS` (21) so a customer who
+  never taps anything cannot strand the tailor's money for ever.
+- **The tailor declares which, and this was a design flaw I nearly shipped.**
+  Making *every* order wait for a receipt tap would have taken a local tailor
+  from three days to twenty-one — exactly the downside that was rejected when
+  this was chosen. Two pre-existing `PayoutTest` tests caught it. `POST
+  /orders/{order}/collected` now takes `posted`, and sets `received_at` to
+  `now()` when she handed it over: a customer standing in the shop has the
+  garment the moment it is tapped.
+- **Only the customer may raise one, and only once she has the garment.** A
+  garment still being made is a conversation with the tailor, and the tracker
+  is what that conversation is for. Admins can raise one *on her behalf* after
+  a phone call — recorded against her, not against the admin, with
+  `wasOpenedByStaff()` so the screen can say it was taken down over the phone
+  rather than implying she tapped a button. She may be ringing precisely
+  because she cannot work the app.
+- **Not once a payout has been released.** There is nothing left to freeze, and
+  clawing it back means the platform pays twice — which `RefundOrder` already
+  refuses. She can still ring; that is a conversation, not a button.
+- **One open dispute per order cannot be expressed in MySQL** (a partial unique
+  index is not available), so it is a `lockForUpdate` and a re-check in the
+  controller, with the migration saying so rather than pretending otherwise.
+  Two taps on a slow connection is the ordinary way a second one would appear.
+- **Three outcomes, because they are the three things that can happen to the
+  money**: it goes back, it goes on, or nothing moves. A partial refund is the
+  first with an amount, and the balance goes to the tailor **in the same act** —
+  one branch covers the split that most real negotiations end in.
+  `Dispute::WITHDRAWN` is for the call where the parcel turned up after all.
+- **Both parties are told the same thing.** There is no version of the outcome
+  each side hears separately, and the admin's note is shown to both. The tailor
+  is also told the moment a dispute opens: she is about to get a phone call,
+  and finding out from the platform first is kinder than being ambushed by it.
+- **Both phone numbers are in the admin payload with `wa.me` links, and the
+  held amount beside them.** Settling one is two calls; that is the whole point
+  of the screen, so the numbers are the loudest thing on each card and dial on
+  tap. The complaint itself is quieter than they are.
+- **Open disputes lead the admin dashboard's attention list**, above held
+  reviews and failed payouts: it is the only row where money is frozen and two
+  people are waiting on a call only a person can make.
+
+**A latent CSS bug this surfaced**: `.confirm-panel` is capped at the viewport
+by `.lightbox-inner` but had no `overflow`, so a cap with nothing to scroll
+simply hides the bottom. The settle panel measured 1095px in a 695px window and
+its "Do it" button could not be reached at all. The pause and PIN-reset panels
+share the class and were one short screen away from the same thing.
+
+**Still open, and now buildable:** §3 promises admins reach measurement
+photographs with `measurements.view` *and* a real dispute. `MeasurementAccess`
+still returns a flat no for admins; a real dispute now exists to test against.
 
 ### PIN reset — done
 

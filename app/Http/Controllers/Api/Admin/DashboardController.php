@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Dispute;
 use App\Models\Order;
 use App\Models\Payout;
 use App\Models\PlatformSetting;
@@ -55,6 +56,22 @@ class DashboardController extends Controller
     private function attention(): array
     {
         $items = [];
+
+        /*
+         * First, because it is the only row where money is frozen and two
+         * people are waiting on a telephone call that only a person can make.
+         */
+        $disputed = Dispute::query()->where('status', Dispute::OPEN)->count();
+
+        if ($disputed > 0) {
+            $items[] = [
+                'key' => 'open_disputes',
+                'count' => $disputed,
+                'label' => $disputed === 1 ? 'order is disputed' : 'orders are disputed',
+                'href' => '/admin/disputes',
+                'tone' => 'bad',
+            ];
+        }
 
         $held = Review::query()->where('status', Review::HELD)->count();
 

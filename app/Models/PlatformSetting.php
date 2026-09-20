@@ -117,6 +117,22 @@ class PlatformSetting extends Model
      */
     public const DIRECTORY_REQUIRES_SUBSCRIPTION = 'directory_requires_subscription';
 
+    /**
+     * How long to wait for a customer to confirm a parcel arrived before
+     * paying the tailor anyway.
+     *
+     * The escrow clock runs from the customer confirming receipt, because
+     * `collected_at` is the tailor's action and for a posted garment that is
+     * the day she went to the post office. This is the backstop: a customer
+     * who never confirms must not be able to strand a tailor's money for
+     * ever, so after this many days from dispatch it releases regardless.
+     *
+     * Long, deliberately. It only bites when somebody has gone quiet, and
+     * being slow to pay a tailor is a smaller harm than paying her for a
+     * garment that never arrived.
+     */
+    public const ESCROW_RECEIPT_BACKSTOP_DAYS = 'escrow_receipt_backstop_days';
+
     /** How long a suspension runs when an admin does not say otherwise. */
     public const DEFAULT_SUSPENSION_DAYS = 'default_suspension_days';
 

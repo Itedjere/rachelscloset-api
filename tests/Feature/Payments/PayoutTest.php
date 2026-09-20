@@ -45,9 +45,16 @@ class PayoutTest extends TestCase
             'amount' => '25000.00',
         ]);
 
+        /*
+         * Collected in person, so she had it the moment the tailor tapped --
+         * which is what `received_at` records. The escrow clock runs from
+         * receipt rather than from dispatch, so that a posted garment cannot
+         * pay out while it is still in the van.
+         */
         $order->forceFill([
             'status' => Order::COLLECTED,
             'collected_at' => now()->subDays(5),
+            'received_at' => now()->subDays(5),
         ])->save();
 
         Payout::recordFor($order, '25000.00');
@@ -102,7 +109,7 @@ class PayoutTest extends TestCase
     public function test_a_tailor_cannot_release_during_the_waiting_period(): void
     {
         $order = $this->collectedEscrowOrder();
-        $order->forceFill(['collected_at' => now()])->save();
+        $order->forceFill(['collected_at' => now(), 'received_at' => now()])->save();
 
         Sanctum::actingAs($order->tailor);
 
@@ -147,7 +154,11 @@ class PayoutTest extends TestCase
     public function test_a_direct_order_has_nothing_to_release(): void
     {
         $order = Order::factory()->create(['escrow' => false]);
-        $order->forceFill(['status' => Order::COLLECTED, 'collected_at' => now()->subDays(5)])->save();
+        $order->forceFill([
+            'status' => Order::COLLECTED,
+            'collected_at' => now()->subDays(5),
+            'received_at' => now()->subDays(5),
+        ])->save();
 
         Sanctum::actingAs($order->tailor);
 
@@ -174,7 +185,7 @@ class PayoutTest extends TestCase
     {
         $due = $this->collectedEscrowOrder();
         $notYet = $this->collectedEscrowOrder();
-        $notYet->forceFill(['collected_at' => now()])->save();
+        $notYet->forceFill(['collected_at' => now(), 'received_at' => now()])->save();
 
         $this->artisan('payouts:release-due')->assertSuccessful();
 

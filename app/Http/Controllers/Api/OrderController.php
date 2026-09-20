@@ -131,12 +131,62 @@ class OrderController extends Controller
     }
 
     /** Handed over. Escrow release is Section 12. */
+    /**
+     * The tailor hands it over -- across a counter, or to a courier.
+     *
+     * SHE SAYS WHICH, because the two are not the same event and the escrow
+     * clock depends on the difference. A customer standing in the shop has
+     * the garment the moment this is tapped; a customer four hundred
+     * kilometres away has a tracking number and a week to wait.
+     *
+     * Collected in person therefore starts the clock at once, which keeps
+     * the ordinary local order paying out in three days as it always has.
+     * Posted waits for the customer to confirm it arrived, with a long
+     * backstop so silence cannot strand the money. See escrowReleaseDue().
+     */
     public function markCollected(Request $request, Order $order): JsonResponse
     {
         abort_unless($order->tailor_id === $request->user()->id, 404);
         abort_unless($order->status === Order::READY, 422, 'This order is not ready yet.');
 
-        $order->forceFill(['status' => Order::COLLECTED, 'collected_at' => now()])->save();
+        $validated = $request->validate([
+            'posted' => ['nullable', 'boolean'],
+        ]);
+
+        $posted = (bool) ($validated['posted'] ?? false);
+
+        $order->forceFill([
+            'status' => Order::COLLECTED,
+            'collected_at' => now(),
+            // In her hands already, so there is nothing to wait for.
+            'received_at' => $posted ? null : now(),
+        ])->save();
+
+        return $this->respond($request, $order);
+    }
+
+    /**
+     * "It arrived."
+     *
+     * The customer's own action, and the thing that starts the escrow clock.
+     * The tailor marking an order collected is her handing it over or
+     * posting it; for a remote customer those are a week apart, and running
+     * the clock from dispatch meant the money could be gone before the box
+     * was opened. See Order::escrowReleaseDue().
+     *
+     * Confirming receipt is NOT saying she is happy with it. She can still
+     * raise a problem afterwards, and the two are separate buttons saying
+     * separate things.
+     */
+    public function markReceived(Request $request, Order $order): JsonResponse
+    {
+        abort_unless($order->customer_id === $request->user()->id, 404);
+        abort_unless($order->status === Order::COLLECTED, 422, 'This order has not been sent yet.');
+
+        // Idempotent: two taps on a slow connection must not move the clock.
+        if ($order->received_at === null) {
+            $order->forceFill(['received_at' => now()])->save();
+        }
 
         return $this->respond($request, $order);
     }
@@ -153,6 +203,18 @@ class OrderController extends Controller
     {
         abort_unless($order->customer_id === $request->user()->id, 404);
         abort_unless($order->status === Order::COLLECTED, 422, 'This order has not been collected yet.');
+
+        /*
+         * Not while something is being looked into. Confirming happiness
+         * releases the money at once, which would walk straight past the
+         * freeze the dispute exists to apply -- and the person tapping it
+         * may well be the one who complained.
+         */
+        abort_if(
+            $order->hasOpenDispute(),
+            422,
+            'We are looking into this order. We will call you.',
+        );
 
         $order->forceFill(['status' => Order::COMPLETED, 'completed_at' => now()])->save();
 

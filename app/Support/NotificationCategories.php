@@ -79,6 +79,10 @@ class NotificationCategories
         // Sections 5, 12, 14.
         'payout_released' => self::MONEY,
         'order_refunded' => self::MONEY,
+        // A dispute is about somebody's money and her garment; it belongs
+        // with the money rather than with progress updates.
+        'order_disputed' => self::MONEY,
+        'dispute_resolved' => self::MONEY,
         'subscription_expiring' => self::MONEY,
         'subscription_lapsed' => self::MONEY,
 

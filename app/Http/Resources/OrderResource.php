@@ -29,6 +29,9 @@ class OrderResource extends JsonResource
             'ready_at' => $this->ready_at,
             'collection_deadline' => $this->collection_deadline?->toDateString(),
             'collected_at' => $this->collected_at,
+            // Null on a posted garment until she says it arrived, which is
+            // what starts the escrow clock -- see Order::escrowReleaseDue().
+            'received_at' => $this->received_at,
             'completed_at' => $this->completed_at,
 
             // Section 9 writes these. Zero until then.

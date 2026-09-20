@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Dispute;
 use App\Models\Order;
 use App\Models\Payout;
 use App\Models\PlatformSetting;
@@ -57,6 +58,45 @@ class AdminDashboardTest extends TestCase
     /** A list of zeroes trains somebody to stop reading the list. */
     public function test_nothing_waiting_shows_nothing(): void
     {
+        $this->assertSame([], $this->dashboard()['attention']);
+    }
+
+    /**
+     * Frozen money and two people waiting on a call, so it leads the list.
+     */
+    public function test_an_open_dispute_leads_the_list(): void
+    {
+        $order = Order::factory()->create();
+
+        Dispute::create([
+            'order_id' => $order->id,
+            'raised_by' => $order->customer_id,
+            'reason' => 'The gown does not fit.',
+        ]);
+
+        $attention = $this->dashboard()['attention'];
+
+        $this->assertSame('open_disputes', $attention[0]['key']);
+        $this->assertSame(1, $attention[0]['count']);
+        $this->assertSame('bad', $attention[0]['tone']);
+        $this->assertSame('/admin/disputes', $attention[0]['href']);
+    }
+
+    /** Settled means gone from the queue, not struck through in it. */
+    public function test_a_settled_dispute_leaves_the_list(): void
+    {
+        $order = Order::factory()->create();
+
+        Dispute::create([
+            'order_id' => $order->id,
+            'raised_by' => $order->customer_id,
+            'reason' => 'The gown does not fit.',
+        ])->forceFill([
+            'status' => Dispute::RESOLVED,
+            'outcome' => Dispute::WITHDRAWN,
+            'resolved_at' => now(),
+        ])->save();
+
         $this->assertSame([], $this->dashboard()['attention']);
     }
 
