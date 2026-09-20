@@ -498,6 +498,19 @@ must never die. 9 new tests, 299 total.
   is an HTML-to-canvas dependency. Rasterising an SVG through an `<img>` was
   the other option and loses the webfonts, which is most of what makes the
   card look like this platform.
+- **Two sides, doing different jobs.** The front is who she is — the thing
+  handed across a counter — and carries a "See my work →" cue so the back is
+  not a surprise. The back is the scan side and gives the code a whole face,
+  which took it from 24mm to **27.8mm** with 0.68mm modules. A code that will
+  not scan is the only way this card can actually fail, so that size is the
+  point of having a back at all.
+- **Two themes, and the code never inverts.** White or deep violet, her
+  choice, chosen from swatches painted in the card's own ground rather than
+  from two words. On the dark card the QR sits on a white tile: an inverted
+  code is read by some scanners and silently refused by others, and a card
+  that works on one phone and not another is the worst outcome for an object
+  that cannot be recalled. Verified in the browser — 1089 of 1089 modules
+  correct in both themes, quiet zone pure white.
 - **The QR is drawn module by module from the grid.** No fetch, no scaling,
   every module on a whole pixel. Verified against the server's matrix in the
   browser: 1089 of 1089 correct, 7px modules, quiet zone pure white. At
