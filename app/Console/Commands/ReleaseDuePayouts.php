@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Order;
 use App\Models\Payout;
+use App\Models\PlatformSetting;
 use App\Services\Payments\ReleasePayout;
 use Illuminate\Console\Command;
 
@@ -33,6 +34,9 @@ class ReleaseDuePayouts extends Command
             ->filter(fn (Payout $p) => $p->order->escrowReleaseDue());
 
         if ($candidates->isEmpty()) {
+            // Still a heartbeat: "nothing was due" is a healthy run, and the
+            // dashboard needs to tell that apart from "this has not run".
+            $this->stamp();
             $this->info('Nothing due.');
 
             return self::SUCCESS;
@@ -59,8 +63,25 @@ class ReleaseDuePayouts extends Command
             }
         }
 
+        $this->stamp();
         $this->info("Released {$sent} of {$candidates->count()}.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The heartbeat the admin dashboard reads.
+     *
+     * Not written on a dry run: a dry run proves the command can be invoked,
+     * not that the schedule is alive, and a heartbeat that a human can fake
+     * by hand is worth nothing.
+     */
+    private function stamp(): void
+    {
+        if ($this->option('dry-run')) {
+            return;
+        }
+
+        PlatformSetting::set(PlatformSetting::PAYOUTS_RELEASED_AT, now()->toIso8601String());
     }
 }

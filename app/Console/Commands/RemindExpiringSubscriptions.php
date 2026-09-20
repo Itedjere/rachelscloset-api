@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\PlatformSetting;
 use App\Models\Subscription;
 use App\Notifications\SubscriptionExpiring;
 use App\Notifications\SubscriptionLapsed;
@@ -41,6 +42,14 @@ class RemindExpiringSubscriptions extends Command
 
         $sent += $this->remind($dry);
         $sent += $this->announceLapses($dry);
+
+        /*
+         * The heartbeat the admin dashboard reads. Not on a dry run: that
+         * proves the command can be invoked, not that the schedule is alive.
+         */
+        if (! $dry) {
+            PlatformSetting::set(PlatformSetting::SUBSCRIPTIONS_REMINDED_AT, now()->toIso8601String());
+        }
 
         $this->info($dry ? "{$sent} would be told. Nothing sent." : "{$sent} told.");
 

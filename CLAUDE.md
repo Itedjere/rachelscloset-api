@@ -370,7 +370,7 @@ shell, staff roles, settings, suspensions, public Blade site.
 **New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
 10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions ✅ · 15 Fashion House
-directory ✅ · 16 QR + business card ✅ · 17 admin dashboard.
+directory ✅ · 16 QR + business card ✅ · 17 admin dashboard ✅.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
 
@@ -505,6 +505,54 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Section 17 — the admin dashboard — done
+
+The last section. 24 new tests, 346 total.
+
+**Two questions, in order: is anything waiting, and is anything quietly
+broken.** The numbers come third, because a figure nobody acts on is
+decoration. An attention row with nothing to do is omitted rather than shown
+as zero — a list of zeroes trains somebody to stop reading the list.
+
+**The health panel is a promise from Section 2 coming due.** CLAUDE.md has
+said since then that `notifications_pruned_at` "exists so a cron that has
+quietly stopped shows on the admin dashboard rather than being discovered when
+the disk fills". It now does, and the other two scheduled commands gained the
+same heartbeat: `payouts_released_at` and `subscriptions_reminded_at`.
+
+Nothing on this platform is load-bearing on cron — escrow release is computed,
+expiry is computed, pruning is housekeeping — which is deliberate and is
+*exactly* what would let a dead schedule go unnoticed until somebody's money
+was late. Three states, not two: **never run** is normal on a machine just set
+up; **stale** is not. A dry run stamps nothing, because it proves the command
+can be invoked rather than that the schedule is alive.
+
+**Suspensions, finally.** `EnsureUserIsActive` has cut live sessions since
+Section 1, and a fixed term has lapsed on use rather than on a schedule — but
+nothing could ever start one, and every suspension tested in this project so
+far was written by hand in tinker. The People screen is that missing half, and
+suspension is deliberately the only power on it: no editing names, no reading
+measurements, no changing a phone number that is also a username.
+
+- **Fixed-term by default**, because an indefinite suspension is one nobody
+  gets round to lifting and the middleware already knows how to let one lapse.
+- **Not yourself, and not another admin.** The first is a way to lock everyone
+  out by accident; the second is a disagreement between colleagues that a
+  button should not settle.
+- **She is told, and told why.** `account_suspended` is in the ACCOUNT
+  category, which cannot be switched off — Section 2 said so in as many words.
+  The admin's reason is carried through to her, because a suspension with no
+  explanation becomes a phone call.
+- **Listing people is a deliberate widening**, like the admin order screens.
+  Everywhere else it is refused precisely so nobody can build a directory of
+  another person's customers; this is the only place that lists everybody.
+
+**A CSS bug worth remembering:** `.health li` (specificity 0-1-1) beat
+`.health--stale` (0-1-0), so the shorthand's `transparent` silently ate every
+state colour — the entire point of the panel. Found by reading computed styles
+rather than by looking, which is the only way that particular failure shows
+up.
 
 ### Section 14 — subscriptions — done
 

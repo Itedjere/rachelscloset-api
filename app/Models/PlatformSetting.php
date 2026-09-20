@@ -145,6 +145,19 @@ class PlatformSetting extends Model
      */
     public const NOTIFICATIONS_PRUNED_AT = 'notifications_pruned_at';
 
+    /**
+     * When the other two scheduled commands last finished.
+     *
+     * Same purpose as the one above, and written for the same reason: none of
+     * the three is load-bearing, which is exactly what makes a stopped cron
+     * invisible. A heartbeat going stale on the admin dashboard is how it
+     * becomes visible before somebody notices their money is late or their
+     * reminder never came.
+     */
+    public const PAYOUTS_RELEASED_AT = 'payouts_released_at';
+
+    public const SUBSCRIPTIONS_REMINDED_AT = 'subscriptions_reminded_at';
+
     public static function get(string $key, mixed $default = null): mixed
     {
         return static::query()->where('key', $key)->value('value') ?? $default;

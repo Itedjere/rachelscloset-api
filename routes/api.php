@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\GarmentTypeController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductionStepController;
 use App\Http\Controllers\Api\Admin\RefundController;
 use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\SettingController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankAccountController;
 use App\Http\Controllers\Api\BusinessCardController;
@@ -276,6 +278,23 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         | it held, because the gate is for invented orders rather than for
         | inconvenient praise.
         */
+        /*
+        | What is waiting, and whether anything has quietly stopped. The
+        | health panel is why platform_settings carries a heartbeat per
+        | scheduled command: none of them is load-bearing, which is exactly
+        | what would make a dead cron invisible.
+        */
+        Route::get('/dashboard', DashboardController::class);
+
+        /*
+        | People. A deliberate widening of the ordinary scoping -- everywhere
+        | else, listing people is refused so nobody can build a directory of
+        | somebody else's customers.
+        */
+        Route::get('/users', [AdminUserController::class, 'index']);
+        Route::post('/users/{user}/suspend', [AdminUserController::class, 'suspend']);
+        Route::post('/users/{user}/reinstate', [AdminUserController::class, 'reinstate']);
+
         /*
         | The numbers an admin is expected to revise. Only an allowlist is
         | writable: this table also holds machinery like
