@@ -16,6 +16,11 @@
         being indexable.
     --}}
     <link rel="canonical" href="{{ url()->current() }}">
+    @hasSection('noindex')
+        {{-- A page that says somebody is not listed should not itself be
+             ranked for her name. --}}
+        <meta name="robots" content="noindex, follow">
+    @endif
     <meta property="og:title" content="@yield('title', "Rachel's Closet")">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">

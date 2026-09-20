@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankAccountController;
+use App\Http\Controllers\Api\BusinessCardController;
 use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\CustomerLookupController;
@@ -183,6 +184,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     | the finished garment. Her uploading is the consent -- nothing here
     | reaches into the private step photographs.
     */
+    /*
+    | Her business card: the words and the QR grid, drawn on a canvas in the
+    | browser. The address on it is printed on cardboard and never moves.
+    */
+    Route::get('/business-card', [BusinessCardController::class, 'show']);
+
     Route::get('/portfolio', [PortfolioController::class, 'index']);
     Route::post('/portfolio', [PortfolioController::class, 'store']);
     Route::put('/portfolio/reorder', [PortfolioController::class, 'reorder']);

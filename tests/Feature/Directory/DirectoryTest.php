@@ -89,8 +89,15 @@ class DirectoryTest extends TestCase
         $this->get('/t/nobody-here')->assertNotFound();
     }
 
-    /** The shopfront closes; her orders and money are untouched. */
-    public function test_a_suspended_tailor_disappears_from_the_public_site(): void
+    /**
+     * The shopfront closes; her orders and money are untouched.
+     *
+     * She leaves the LISTING. Her own address keeps resolving, to a quiet
+     * "not listed" page -- Section 16 changed that from a 404, because the
+     * address is printed on cardboard that cannot be reissued and a dead
+     * page reads as a broken platform rather than an absent tailor.
+     */
+    public function test_a_suspended_tailor_disappears_from_the_listing(): void
     {
         $tailor = $this->tailor('Gone Fishing', 'Kano');
         $slug = $tailor->tailorProfile->slug;
@@ -98,7 +105,12 @@ class DirectoryTest extends TestCase
         $tailor->forceFill(['status' => User::STATUS_SUSPENDED])->save();
 
         $this->get('/tailors')->assertOk()->assertDontSee('Gone Fishing');
-        $this->get("/t/{$slug}")->assertNotFound();
+
+        $this->get("/t/{$slug}")
+            ->assertOk()
+            ->assertSee('not listed at the moment')
+            // And nothing of hers is on it.
+            ->assertDontSee('Message on WhatsApp');
     }
 
     public function test_the_state_filter_narrows_the_list(): void

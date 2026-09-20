@@ -8,7 +8,7 @@ use App\Models\TailorCustomerLink;
 use App\Models\User;
 use App\Rules\NigerianPhone;
 use App\Rules\Pin;
-use App\Services\Claims\QrCode;
+use App\Services\Qr\QrCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

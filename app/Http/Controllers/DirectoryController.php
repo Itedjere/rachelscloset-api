@@ -81,9 +81,33 @@ class DirectoryController extends Controller
 
         $tailor = $profile->user;
 
-        // A suspended account disappears from the public site entirely. Her
-        // orders and her money are untouched; this is only the shopfront.
-        abort_unless($tailor && $tailor->isActive() && $tailor->isTailor(), 404);
+        abort_unless($tailor && $tailor->isTailor(), 404);
+
+        /*
+         * NOT A 404 WHEN SHE IS UNAVAILABLE.
+         *
+         * This address is printed on cardboard in somebody's purse and cannot
+         * be reissued, so a dead page here is a permanent physical failure --
+         * and it tells the person scanning it that the platform is broken
+         * rather than that this tailor is not taking work. The page instead
+         * renders a quiet "not currently listed" state: her name, and a way
+         * back to the directory, which is the one outcome that still helps
+         * the customer standing there with her phone out.
+         *
+         * She is still absent from the listing and from the sitemap. This is
+         * only about the address somebody already has.
+         *
+         * Section 14 adds the other reason to be unlisted -- a lapsed
+         * subscription -- to exactly this flag, and to nothing else.
+         */
+        $listed = $tailor->isActive();
+
+        if (! $listed) {
+            return view('public.tailor-unlisted', [
+                'profile' => $profile,
+                'tailor' => $tailor,
+            ]);
+        }
 
         $gallery = PortfolioItem::query()
             ->visible()

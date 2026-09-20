@@ -342,7 +342,7 @@ shell, staff roles, settings, suspensions, public Blade site.
 **New work:** 3.5 design language ✅ · 7 garment types + admin step library with voice notes ✅ ·
 8 templates + arrow reordering ✅ · 9 orders assembled from steps, snapshotted ✅ ·
 10 photo proof ✅ · 11 measurements + consent + claim flow ✅ · 12 completion + escrow release ✅ · 13 two-way reviews + proof gate ✅ · 14 subscriptions · 15 Fashion House
-directory ✅ · 16 QR + business card · 17 admin dashboard.
+directory ✅ · 16 QR + business card ✅ · 17 admin dashboard.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
 
@@ -477,6 +477,51 @@ sections that trigger them.
   Escape, on a click elsewhere and on navigating. It uses `pointerdown` rather
   than `click` for the outside dismiss, because a click fires after release —
   by which time a link outside the menu has already begun navigating.
+
+### Section 16 — QR and the business card — done
+
+The card a tailor sends to a print shop, and the rule that the address on it
+must never die. 9 new tests, 299 total.
+
+- **SVG and a matrix, never a raster.** A PNG writer needs GD or Imagick and
+  the plan is explicit that this must not be able to fail for an environment
+  reason on shared hosting. `QrCode::svg()` serves the screen; `matrix()`
+  returns the raw grid and the browser draws it.
+- **Different correction levels for different jobs**, which is why the level
+  is a parameter. A screen QR is read by a cheap camera pointed at a glossy
+  display at an angle, so High buys a first-time scan and screen pixels are
+  free. Print has no reflections, and there the denser code is what fails:
+  at card size every extra module is smaller, and ink spread closes the gaps.
+  Medium, as the plan says.
+- **The card is drawn on a canvas, not laid out in HTML.** The primary action
+  is "save it as a picture" and a canvas already does that — the alternative
+  is an HTML-to-canvas dependency. Rasterising an SVG through an `<img>` was
+  the other option and loses the webfonts, which is most of what makes the
+  card look like this platform.
+- **The QR is drawn module by module from the grid.** No fetch, no scaling,
+  every module on a whole pixel. Verified against the server's matrix in the
+  browser: 1089 of 1089 correct, 7px modules, quiet zone pure white. At
+  85×55mm that is a 24mm code with 0.59mm modules.
+- **Pure black on white**, never the ink colour. Contrast is what a scanner
+  reads, and a tinted code is the classic way to make one that does not work.
+- **Saving is primary, printing secondary.** A tailor sends the file to a
+  print shop on WhatsApp; home printing is not how this works. Printing uses
+  a `@media print` block and the browser's own "Save as PDF" — no PDF
+  library, which would be tens of megabytes for worse typography.
+- **The card carries the platform.** Without "Rachel's Closet" on it the card
+  shows a web address with no indication of what it is, and asks somebody to
+  trust an unexplained square.
+
+**A 404 on a printed card is a permanent physical failure**, and this section
+changed Section 15's behaviour because of it. A tailor who is not listed no
+longer gets a dead page at her own address: it renders a quiet "not currently
+listed" state with her name and a link back to the directory, which is the one
+outcome that still helps somebody standing there with a card and a phone. She
+stays out of the listing and the sitemap, and the page is `noindex`. Section
+14 attaches a lapsed subscription to exactly that flag.
+
+`App\Services\Claims\QrCode` moved to `App\Services\Qr\QrCode`: it serves
+two sections now and the old namespace had become a lie.
 
 ### Section 15 — the Fashion House directory — done
 
