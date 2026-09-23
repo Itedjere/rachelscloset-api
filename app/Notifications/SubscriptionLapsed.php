@@ -29,7 +29,7 @@ class SubscriptionLapsed extends ClosetNotification
     public function payload(object $notifiable): array
     {
         return [
-            'message' => 'You are no longer in the Fashion House. Your orders and your money are not affected.',
+            'message' => 'Customers can no longer find you in the Fashion House list. Your orders and your money are not affected -- pay again any time to come back.',
             'ended_at' => $this->subscription->current_period_end,
         ];
     }

@@ -28,7 +28,7 @@ class PinWasReset extends ClosetNotification
     public function payload(object $notifiable): array
     {
         return [
-            'message' => 'If this was not you, tell us straight away.',
+            'message' => "If you did not do this, call Rachel's Closet straight away.",
         ];
     }
 

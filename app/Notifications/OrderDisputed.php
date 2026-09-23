@@ -32,14 +32,14 @@ class OrderDisputed extends ClosetNotification
 
     public function subject(object $notifiable): string
     {
-        return 'A customer has raised a problem';
+        return 'Your customer is not happy with an order';
     }
 
     public function payload(object $notifiable): array
     {
         return [
-            'message' => 'We are looking into '.$this->order->reference
-                .' and will call you. Payment for it is on hold until then.',
+            'message' => "Rachel's Closet is looking into order ".$this->order->reference
+                .' and will call you. Your money for it stays put until then.',
             'order_id' => $this->order->id,
             'reference' => $this->order->reference,
         ];

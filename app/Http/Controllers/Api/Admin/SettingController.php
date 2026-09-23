@@ -26,7 +26,12 @@ class SettingController extends Controller
     /**
      * What may be edited, in the order it makes sense to read.
      *
-     * @var array<string, array{label: string, help: string, min: int, max: int, group: string}>
+     * `money` marks the two rows that are naira rather than a count of days
+     * or a percentage, so the screen can group the digits as they are typed.
+     * Said here rather than guessed from the label in the client: "(naira)"
+     * in a string is not a contract.
+     *
+     * @var array<string, array{label: string, help: string, min: int, max: int, group: string, money?: bool}>
      */
     private const EDITABLE = [
         PlatformSetting::PORTFOLIO_MAX_OWN => [
@@ -42,11 +47,13 @@ class SettingController extends Controller
         PlatformSetting::SUBSCRIPTION_PRICE_MONTHLY => [
             'label' => 'Monthly listing price (naira)',
             'help' => 'What 30 days in the Fashion House costs.',
+            'money' => true,
             'min' => 0, 'max' => 1000000, 'group' => 'Listings',
         ],
         PlatformSetting::SUBSCRIPTION_PRICE_YEARLY => [
             'label' => 'Yearly listing price (naira)',
             'help' => 'Changing a price never moves a term somebody already bought.',
+            'money' => true,
             'min' => 0, 'max' => 10000000, 'group' => 'Listings',
         ],
         PlatformSetting::SUBSCRIPTION_MONTHLY_DAYS => [
@@ -113,6 +120,7 @@ class SettingController extends Controller
         $rows = collect(self::EDITABLE)->map(fn (array $meta, string $key) => [
             'key' => $key,
             'value' => (string) PlatformSetting::get($key, ''),
+            'money' => false,
             ...$meta,
         ])->values();
 

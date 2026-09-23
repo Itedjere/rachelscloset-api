@@ -27,17 +27,17 @@ class DisputeResolved extends ClosetNotification
 
     public function subject(object $notifiable): string
     {
-        return 'We have settled '.$this->order->reference;
+        return 'Order '.$this->order->reference.' has been settled';
     }
 
     public function payload(object $notifiable): array
     {
         $message = match ($this->dispute->outcome) {
             Dispute::REFUNDED => $this->dispute->refunded_amount
-                ? 'Money has been sent back to the customer.'
-                : 'The payment has been refunded.',
-            Dispute::RELEASED => 'The payment has gone to the tailor.',
-            default => 'Nothing needed to change.',
+                ? "Rachel's Closet has sent money back to the customer."
+                : "Rachel's Closet has sent your money back to you.",
+            Dispute::RELEASED => 'The money has gone to the tailor.',
+            default => 'Nothing needed to change, so the order carries on as normal.',
         };
 
         return [
