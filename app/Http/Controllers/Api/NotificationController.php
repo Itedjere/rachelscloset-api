@@ -62,6 +62,47 @@ class NotificationController extends Controller
     }
 
     /**
+     * Clear one off the list.
+     *
+     * SAFE IN A WAY THE §2 RULE MIGHT SUGGEST IT IS NOT. That rule says no
+     * preference can stop the in-app record being written, because it is the
+     * record of what happened to somebody's cloth and money -- and it still
+     * holds: nothing here can prevent one arriving. But a notification is a
+     * message ABOUT a thing, not the thing. Deleting it touches no order, no
+     * payment, no payout and no dispute, all of which stay exactly where they
+     * were and are what anybody would actually be asked to produce.
+     *
+     * `notifications:prune` has been deleting these by age since Section 2,
+     * so their impermanence is not new; this only lets somebody tidy her own
+     * list sooner than the cron would.
+     */
+    public function destroy(Request $request, Notification $notification): JsonResponse
+    {
+        // 404 rather than 403: a wrong id must not confirm that somebody
+        // else's notification exists.
+        abort_unless($notification->user_id === $request->user()->id, 404);
+
+        $notification->delete();
+
+        return response()->json([
+            'data' => ['unread_count' => $request->user()->appNotifications()->unread()->count()],
+        ]);
+    }
+
+    /**
+     * Clear the whole list.
+     *
+     * Scoped to her own rows by the relationship, so there is no id to tamper
+     * with and no way to phrase this that reaches anybody else's.
+     */
+    public function destroyAll(Request $request): JsonResponse
+    {
+        $deleted = $request->user()->appNotifications()->delete();
+
+        return response()->json(['data' => ['deleted' => $deleted, 'unread_count' => 0]]);
+    }
+
+    /**
      * The switches, and what each one governs.
      *
      * Shipped with the labels rather than the React app holding its own copy,

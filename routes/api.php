@@ -116,6 +116,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    // Literal path before the parameter, for the same reason as above.
+    Route::delete('/notifications/all', [NotificationController::class, 'destroyAll']);
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
 
     /*
     | Your own account.
