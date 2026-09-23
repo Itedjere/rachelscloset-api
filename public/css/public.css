@@ -862,6 +862,47 @@
   border: 0;
   background: transparent;
   overflow: visible;
+  /* A column, so the stage takes what the bar and rail leave rather than
+     being told a height that stops being true when a caption wraps. */
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * Arrow, photograph, arrow, as three items in a row.
+ *
+ * They used to live in the bar under the picture, which meant the two things
+ * you press most were furthest from what they act on. Beside it they are
+ * where the hand already is -- and as flex items they cannot end up on top
+ * of the photograph, which is what happened the first time they moved.
+ */
+.lightbox__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 0;
+  /* A drag is a gesture here: the browser must not also pan, and a long
+     press must not begin selecting. */
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.lightbox__stage.is-dragging {
+  cursor: grabbing;
+}
+
+/* The inline transform from a drag would otherwise fight the entry
+   keyframes, which set one of their own. */
+.lightbox__stage.is-dragging [data-lightbox-image] {
+  animation: none;
+  cursor: grabbing;
+}
+
+.lightbox .lightbox__step {
+  flex: none;
+  font-size: 28px;
+  line-height: 1;
 }
 
 .lightbox::backdrop {
@@ -869,8 +910,17 @@
   backdrop-filter: blur(6px);
 }
 
-.lightbox img {
-  width: 100%;
+/*
+ * Scoped to the main photograph by attribute, not to `img`.
+ *
+ * The fade starts at opacity 0 and is cleared by .is-loaded, which only this
+ * one ever gets -- so a bare `.lightbox img` left every thumbnail in the
+ * rail permanently invisible.
+ */
+.lightbox [data-lightbox-image] {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   max-height: 80vh;
   object-fit: contain;
   border-radius: var(--radius);
@@ -878,8 +928,50 @@
   transition: opacity var(--dur) var(--ease-out);
 }
 
-.lightbox img.is-loaded {
+.lightbox [data-lightbox-image].is-loaded {
   opacity: 1;
+}
+
+.lightbox [data-lightbox-image] {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/*
+ * Arriving from the side it came from.
+ *
+ * Layered on top of the existing opacity fade rather than replacing it: the
+ * fade is driven by .is-loaded once the file has decoded, which is the part
+ * that stops a half-painted photograph appearing. This only adds the
+ * movement, and only transform, which composites.
+ */
+.lightbox [data-lightbox-image].is-from-right {
+  animation: lightbox-in-right var(--dur) var(--ease-out) both;
+}
+
+.lightbox [data-lightbox-image].is-from-left {
+  animation: lightbox-in-left var(--dur) var(--ease-out) both;
+}
+
+@keyframes lightbox-in-right {
+  from {
+    transform: translateX(7%);
+  }
+}
+
+@keyframes lightbox-in-left {
+  from {
+    transform: translateX(-7%);
+  }
+}
+
+/* motion.js already declines to add the classes, and this is the belt to
+   that pair of braces -- the page is complete with no movement at all. */
+@media (prefers-reduced-motion: reduce) {
+  .lightbox [data-lightbox-image].is-from-right,
+  .lightbox [data-lightbox-image].is-from-left {
+    animation: none;
+  }
 }
 
 .lightbox__bar {
@@ -910,6 +1002,74 @@
 
 .lightbox button:hover {
   background: rgba(252, 250, 255, 0.14);
+}
+
+/* ---------------------------------------------------------------------------
+   The thumbnail rail
+
+   Arrows alone make a gallery a queue: you cannot see what is coming, and
+   getting back to the third photograph means counting. Hidden entirely when
+   there is only one, which is most of the landing page.
+   --------------------------------------------------------------------------- */
+
+.lightbox__rail {
+  display: flex;
+  gap: var(--s-2);
+  margin-top: var(--s-3);
+  overflow-x: auto;
+  padding-bottom: 4px;
+  /*
+   * Centred, but `safe` centred: plain `center` on a scroll container that
+   * overflows pushes content out both sides, and what goes off the left edge
+   * cannot be scrolled back to. `safe` falls back to flex-start exactly when
+   * that would happen. The plain line stays first as the fallback.
+   */
+  justify-content: center;
+  justify-content: safe center;
+}
+
+/*
+ * Squares, not the 44px circles every other button in here is.
+ *
+ * Qualified with `.lightbox` because `.lightbox button` above is 0-1-1 and a
+ * bare `.lightbox__thumb` is 0-1-0 -- so the round 44px rule won and the
+ * rail rendered at the wrong size with the images clipped. The same
+ * specificity trap as `.health li` over `.health--stale` in the app
+ * stylesheet, which cost an afternoon.
+ */
+.lightbox .lightbox__thumb {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: none;
+  opacity: 0.55;
+  transition: opacity var(--dur) var(--ease-out);
+}
+
+.lightbox .lightbox__thumb:hover {
+  background: none;
+  opacity: 0.85;
+}
+
+.lightbox .lightbox__thumb.is-current {
+  border-color: var(--on-dark);
+  opacity: 1;
+}
+
+.lightbox .lightbox__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox .lightbox__thumb {
+    transition: none;
+  }
 }
 
 /* ===========================================================================
@@ -1378,5 +1538,43 @@
 
   .tailor-card__body h2 {
     font-size: var(--fs-body);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The lightbox on a phone
+
+   Two 44px arrows plus gaps take a third of the width off a 360px screen, so
+   below 480px they go: dragging and the rail do the same job and cost
+   nothing. A phone on its side has no room for a rail as well as a picture,
+   and the picture is the point.
+   --------------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .lightbox {
+    width: 96vw;
+    max-height: 94vh;
+  }
+
+  .lightbox .lightbox__thumb {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lightbox .lightbox__step {
+    display: none;
+  }
+
+  .lightbox .lightbox__thumb {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-height: 460px) {
+  .lightbox__rail {
+    display: none;
   }
 }

@@ -515,10 +515,46 @@
     var previous = dialog.querySelector("[data-lightbox-prev]");
     var next = dialog.querySelector("[data-lightbox-next]");
 
+    var rail = dialog.querySelector("[data-lightbox-rail]");
+
     var items = Array.prototype.slice.call(document.querySelectorAll("[data-lightbox-open]"));
     var current = 0;
+    var thumbs = [];
+
+    /*
+     * A rail of thumbnails, built from the same triggers the arrows walk.
+     * Arrows alone make a gallery a queue: you cannot see what is coming and
+     * you cannot get back to the third photograph without counting. One
+     * photograph needs none of it, so the rail stays hidden.
+     */
+    if (rail && items.length > 1) {
+      rail.hidden = false;
+
+      items.forEach(function (trigger, index) {
+        var source = trigger.querySelector("img");
+        var button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "lightbox__thumb";
+        button.setAttribute("aria-label", "Photograph " + (index + 1));
+
+        var thumb = document.createElement("img");
+        // The small file the page already loaded, not the full one -- the
+        // rail must not pull a second copy of every photograph.
+        thumb.src = source ? source.currentSrc || source.src : trigger.getAttribute("data-full");
+        thumb.alt = "";
+        thumb.loading = "lazy";
+
+        button.appendChild(thumb);
+        button.addEventListener("click", function () { show(index); });
+
+        rail.appendChild(button);
+        thumbs.push(button);
+      });
+    }
 
     function show(index) {
+      var was = current;
       current = (index + items.length) % items.length;
 
       var trigger = items[current];
@@ -527,11 +563,47 @@
 
       if (image) {
         image.classList.remove("is-loaded");
+
+        /*
+         * Enter from the side we came from. Shortest way round, so wrapping
+         * off the end still reads as forward -- which is what the arrow that
+         * did it said.
+         *
+         * The classes are removed and the element's offsetWidth read before
+         * they go back on: without that reflow the browser sees no change
+         * and the animation never restarts, so the second and every later
+         * move would sit still. React gets this for free by keying the
+         * element; here it has to be asked for.
+         */
+        image.classList.remove("is-from-right", "is-from-left");
+
+        if (!reduced && was !== current) {
+          void image.offsetWidth;
+
+          var forward = (current - was + items.length) % items.length;
+
+          image.classList.add(
+            forward <= items.length / 2 ? "is-from-right" : "is-from-left"
+          );
+        }
+
         image.src = full;
         image.alt = text;
       }
 
       if (caption) caption.textContent = text;
+
+      thumbs.forEach(function (button, position) {
+        var on = position === current;
+
+        button.classList.toggle("is-current", on);
+        button.setAttribute("aria-current", on ? "true" : "false");
+
+        // Keep the one in play reachable without a horizontal scroll hunt.
+        if (on && button.scrollIntoView) {
+          button.scrollIntoView({ block: "nearest", inline: "center" });
+        }
+      });
     }
 
     items.forEach(function (trigger, index) {
@@ -556,6 +628,66 @@
       if (event.key === "ArrowRight") show(current + 1);
       if (event.key === "ArrowLeft") show(current - 1);
     });
+
+    /*
+     * Drag the photograph to move through the set.
+     *
+     * Pointer events, so one path covers a finger, a mouse and a pen --
+     * the same finding as the carousels: touch gives a swipe for free and a
+     * mouse gives nothing, so the mouse is the case you have to write.
+     *
+     * The picture tracks the hand rather than jumping when it is let go,
+     * which is what makes the gesture feel connected to anything.
+     */
+    var stage = dialog.querySelector("[data-lightbox-stage]");
+
+    if (stage && image && window.PointerEvent) {
+      var from = null;
+
+      stage.addEventListener("pointerdown", function (event) {
+        // A press on an arrow is a click, not the start of a drag.
+        if (event.target.closest("button")) return;
+        if (items.length < 2) return;
+
+        from = event.clientX;
+        stage.classList.add("is-dragging");
+        stage.setPointerCapture(event.pointerId);
+      });
+
+      stage.addEventListener("pointermove", function (event) {
+        if (from === null) return;
+
+        image.style.transform = "translateX(" + (event.clientX - from) + "px)";
+      });
+
+      function release(event) {
+        if (from === null) return;
+
+        var moved = event.clientX - from;
+        /*
+         * A fifth of the stage, floored at 40px and capped at 140.
+         *
+         * A fixed pixel threshold is either unreachable on a phone or
+         * tripped by a shaky desktop tap, so it scales -- but a fifth of an
+         * 1100px stage is a 220px mouse drag, which is further than anyone
+         * wants to push to see the next picture.
+         */
+        var threshold = Math.min(140, Math.max(40, stage.clientWidth * 0.2));
+
+        from = null;
+        stage.classList.remove("is-dragging");
+        image.style.transform = "";
+
+        if (Math.abs(moved) > threshold) show(current + (moved < 0 ? 1 : -1));
+      }
+
+      stage.addEventListener("pointerup", release);
+      stage.addEventListener("pointercancel", function () {
+        from = null;
+        stage.classList.remove("is-dragging");
+        image.style.transform = "";
+      });
+    }
 
     if (image) {
       image.addEventListener("load", function () {
