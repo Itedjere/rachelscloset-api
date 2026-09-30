@@ -862,8 +862,18 @@
   border: 0;
   background: transparent;
   overflow: visible;
-  /* A column, so the stage takes what the bar and rail leave rather than
-     being told a height that stops being true when a caption wraps. */
+}
+
+/*
+ * A column, so the stage takes what the bar and rail leave rather than being
+ * told a height that stops being true when a caption wraps.
+ *
+ * On [open] ONLY. A closed <dialog> is hidden by the browser's own
+ * `dialog:not([open]) { display: none }`, and any author `display` beats it --
+ * so a bare `.lightbox { display: flex }` drew the closed lightbox, thumbnail
+ * rail and all, in normal flow at the foot of every page that has one.
+ */
+.lightbox[open] {
   display: flex;
   flex-direction: column;
 }
