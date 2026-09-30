@@ -186,6 +186,86 @@ class ClaimFlowTest extends TestCase
         ])->assertStatus(422);
     }
 
+    /** A code read down the phone with no address beside it is a key with no door. */
+    public function test_the_invite_carries_the_address_to_read_out(): void
+    {
+        $data = $this->issue();
+
+        $this->assertStringEndsWith('/claim', $data['claim_page']);
+        $this->assertStringStartsWith($data['claim_page'].'/', $data['link']);
+    }
+
+    /**
+     * The code is checked before she is shown the PIN boxes, so she never
+     * faces two rows of six at once -- and checking uses nothing up.
+     */
+    public function test_a_spoken_code_is_checked_before_she_chooses_a_pin(): void
+    {
+        $data = $this->issue();
+
+        $this->postJson('/api/claim/check', ['code' => $data['code'], 'phone' => '0803 111 2233'])
+            ->assertOk()
+            ->assertJsonPath('data.name', $this->walkIn->name)
+            ->assertJsonPath('data.invited_by', $this->tailor->name);
+
+        $this->assertNull(ClaimToken::query()->sole()->used_at);
+        $this->assertFalse($this->walkIn->fresh()->isClaimed());
+
+        // And the real claim still works afterwards.
+        $this->postJson('/api/claim', [
+            'code' => $data['code'],
+            'phone' => '08031112233',
+            'pin' => '493028',
+            'pin_confirmation' => '493028',
+        ])->assertOk();
+    }
+
+    /** Same single refusal as the claim, so it cannot tell a guesser which part was wrong. */
+    public function test_the_check_refuses_a_wrong_code_a_wrong_number_and_an_expired_one_alike(): void
+    {
+        $data = $this->issue();
+        User::factory()->customer()->unclaimed()->create(['phone' => '08039998877']);
+
+        $messages = [
+            $this->postJson('/api/claim/check', ['code' => '000000', 'phone' => '08031112233'])
+                ->assertStatus(422)->json('errors.code.0'),
+            $this->postJson('/api/claim/check', ['code' => $data['code'], 'phone' => '08039998877'])
+                ->assertStatus(422)->json('errors.code.0'),
+            $this->postJson('/api/claim/check', ['code' => $data['code'], 'phone' => '08035550000'])
+                ->assertStatus(422)->json('errors.code.0'),
+        ];
+
+        ClaimToken::query()->update(['expires_at' => now()->subMinute()]);
+
+        $messages[] = $this->postJson('/api/claim/check', ['code' => $data['code'], 'phone' => '08031112233'])
+            ->assertStatus(422)->json('errors.code.0');
+
+        $this->assertCount(1, array_unique($messages));
+    }
+
+    /**
+     * Checking is a second door onto the same six-digit guess, so it spends
+     * the SAME allowance as claiming. Eight checks leave no claims.
+     */
+    public function test_checking_and_claiming_share_one_allowance_of_guesses(): void
+    {
+        $data = $this->issue();
+
+        for ($i = 0; $i < 8; $i++) {
+            $this->postJson('/api/claim/check', ['code' => '000000', 'phone' => '08031112233'])
+                ->assertStatus(422);
+        }
+
+        $this->postJson('/api/claim', [
+            'code' => $data['code'],
+            'phone' => '08031112233',
+            'pin' => '493028',
+            'pin_confirmation' => '493028',
+        ])->assertStatus(429);
+
+        $this->assertFalse($this->walkIn->fresh()->isClaimed());
+    }
+
     public function test_an_expired_invitation_fails(): void
     {
         $data = $this->issue();

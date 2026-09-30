@@ -48,10 +48,18 @@ class ClaimController extends Controller
 
         $issued = ClaimToken::issue($customer, $tailor);
 
-        $link = rtrim((string) config('app.frontend_url'), '/').'/claim/'.$issued['link_token'];
+        $claimPage = rtrim((string) config('app.frontend_url'), '/').'/claim';
+        $link = $claimPage.'/'.$issued['link_token'];
 
         return response()->json(['data' => [
             'code' => $issued['code'],
+            /*
+             * Where a spoken code is typed in. A code read down the phone
+             * with no address beside it was a key with no door: nothing in
+             * the app linked to this page, so the tailor's card now says the
+             * address out loud along with the six digits.
+             */
+            'claim_page' => $claimPage,
             'link' => $link,
             'qr_svg' => $this->qr->svg($link),
             /*
@@ -82,11 +90,33 @@ class ClaimController extends Controller
 
         abort_if($user === null || $user->isClaimed(), 404);
 
-        return response()->json(['data' => [
-            'name' => $user->name,
-            'invited_by' => $claim->issuedBy?->name,
-            'invited_by_business' => $claim->issuedBy?->tailorProfile?->business_name,
-        ]]);
+        return response()->json(['data' => $this->previewOf($claim, $user)]);
+    }
+
+    /**
+     * Is this spoken code right? Asked BEFORE she chooses a PIN.
+     *
+     * Without it the screen held two rows of six boxes at once -- the numbers
+     * she was read and the numbers she is choosing -- and the only thing
+     * telling them apart was a label, on a platform built for people who read
+     * poorly. Now she types the code, is told it is right and whose account
+     * it is, and only then sees the PIN boxes.
+     *
+     * Consumes nothing: the claim itself re-checks everything. It shares the
+     * `claim` rate limiter with the claim route, so it is not a second budget
+     * of guesses, and it refuses with the same single message for the same
+     * reason.
+     */
+    public function check(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:6'],
+            'phone' => ['required', 'string', new NigerianPhone],
+        ]);
+
+        [$claim, $user] = $this->resolve($this->byCode($validated['phone'], $validated['code']));
+
+        return response()->json(['data' => $this->previewOf($claim, $user)]);
     }
 
     /**
@@ -106,19 +136,9 @@ class ClaimController extends Controller
             'pin' => ['required', 'confirmed', new Pin],
         ]);
 
-        $claim = isset($validated['token'])
+        [$claim, $user] = $this->resolve(isset($validated['token'])
             ? ClaimToken::findByLinkToken($validated['token'])
-            : $this->byCode($validated['phone'], $validated['code']);
-
-        // One message for every failure. Saying which part was wrong turns
-        // this into a way of discovering whose numbers are registered here.
-        $this->refuse($claim === null);
-        $this->refuse(! $claim->isUsable());
-        $this->refuse($claim->purpose !== ClaimToken::CLAIM);
-
-        $user = $claim->user;
-
-        $this->refuse($user === null || $user->isClaimed());
+            : $this->byCode($validated['phone'], $validated['code']));
 
         // The PIN must not be derivable from the phone number printed on the
         // screen beside it -- App\Rules\Pin already refuses that, and it
@@ -155,6 +175,39 @@ class ClaimController extends Controller
             'token' => $token,
             'user' => $user->fresh()->only(['id', 'name', 'phone', 'role']),
         ]);
+    }
+
+    /**
+     * The claim and its customer, or the one refusal.
+     *
+     * Shared by the check and the claim so the two can never disagree about
+     * what counts as a usable code. One message for every failure: saying
+     * which part was wrong turns this into a way of discovering whose numbers
+     * are registered here.
+     *
+     * @return array{0: ClaimToken, 1: User}
+     */
+    private function resolve(?ClaimToken $claim): array
+    {
+        $this->refuse($claim === null);
+        $this->refuse(! $claim->isUsable());
+        $this->refuse($claim->purpose !== ClaimToken::CLAIM);
+
+        $user = $claim->user;
+
+        $this->refuse($user === null || $user->isClaimed());
+
+        return [$claim, $user];
+    }
+
+    /** Enough to reassure her it is the right record, and nothing worth guessing for. */
+    private function previewOf(ClaimToken $claim, User $user): array
+    {
+        return [
+            'name' => $user->name,
+            'invited_by' => $claim->issuedBy?->name,
+            'invited_by_business' => $claim->issuedBy?->tailorProfile?->business_name,
+        ];
     }
 
     private function byCode(string $phone, string $code): ?ClaimToken

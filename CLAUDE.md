@@ -427,6 +427,26 @@ the lookup's 404 said creating one "comes with the measurements section".
   the tailor the QR / WhatsApp / code card for as long as that is true —
   `OrderResource` now says `claimed` for each party so it can.
 
+**The spoken code, given a door.** The six digits are a claim code, NOT her
+PIN, and two things made that route unusable:
+
+- **Nothing linked to `/claim`.** The sign-in page now has "My tailor read me
+  six numbers", and the invite card gives the tailor the whole sentence to
+  say, address included (`claim_page` in the invite response).
+- **Two rows of six boxes on one screen** — the numbers she was read and the
+  numbers she chooses — told apart only by labels. The code route is now two
+  steps: `POST /api/claim/check` answers with her own name, and only then does
+  she see the PIN boxes. It consumes nothing and refuses with the claim's one
+  message. **It shares the named `claim` rate limiter with `POST /api/claim`**
+  (`AppServiceProvider`): a second door onto the same six-digit guess must not
+  be a second budget of guesses. Tested.
+- Side effect worth knowing: the code route used to skip the consent sentence
+  ("this lets her keep seeing your measurements"), because it had no preview
+  to name the tailor from. Step two now shows it, as the link route always did.
+
+**Not yet done:** `PinReset.tsx` has the same two-rows-of-six layout (the
+admin's reset code, then the new PIN) and would take the same split.
+
 ### Sections 4 and 5 — orders and the money spine — partly done
 
 `orders`, `payments`, `payouts`, `webhook_events`, bank columns on

@@ -82,7 +82,9 @@ Route::post('/webhooks/flutterwave', PaymentWebhookController::class)
 | limit plus the 48-hour expiry.
 */
 Route::get('/claim/{token}', [ClaimController::class, 'preview'])->middleware('throttle:20,1');
-Route::post('/claim', [ClaimController::class, 'claim'])->middleware('throttle:8,1');
+// The check and the claim share one named allowance -- see AppServiceProvider.
+Route::post('/claim/check', [ClaimController::class, 'check'])->middleware('throttle:claim');
+Route::post('/claim', [ClaimController::class, 'claim'])->middleware('throttle:claim');
 
 /*
 | Getting back in after forgetting a PIN.
