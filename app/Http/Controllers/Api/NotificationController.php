@@ -109,14 +109,16 @@ class NotificationController extends Controller
      * so adding a group is one change in one file. The hints matter here more
      * than usual: somebody deciding what to switch off is reading, which is the
      * thing this platform assumes people find hard.
+     *
+     * `groups` is only what her role can receive; `preferences` is every
+     * stored switch, hidden ones included, so saving sends them all back
+     * unchanged.
      */
     public function preferences(Request $request): JsonResponse
     {
         return response()->json([
             'data' => [
-                'groups' => collect(NotificationCategories::OPTIONAL)
-                    ->map(fn (array $group, string $key) => $group + ['key' => $key])
-                    ->values(),
+                'groups' => NotificationCategories::offeredTo($request->user()->role),
                 'preferences' => $request->user()->pushPreferences(),
             ],
         ]);
@@ -124,7 +126,7 @@ class NotificationController extends Controller
 
     public function updatePreferences(Request $request): JsonResponse
     {
-        $groups = array_keys(NotificationCategories::OPTIONAL);
+        $groups = NotificationCategories::OPTIONAL;
 
         $rules = ['preferences' => ['required', 'array']];
 

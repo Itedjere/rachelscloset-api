@@ -1385,6 +1385,13 @@ Three things worth knowing:
   missing. `NotificationCategories::MAP` is populated ahead of the sections that
   will send those types, so the settings page governs something real — **each
   later section confirms its own type string as it lands.**
+- **The switches shown are per role; the switches stored are not.**
+  `NotificationCategories::OFFERED` lists, per role, only groups something
+  actually sends her, worded for her side — a tailor was once offered "Work on
+  your clothes", which only a customer ever receives. `OPTIONAL` stays the full
+  stored shape for everybody, so hiding a switch never resets a choice.
+  Measurements is offered to nobody until something sends a
+  `measurement_access_*` alert; admins are offered nothing.
 - **Push degrades to nothing, never to an error.** No VAPID keys means
   `SendPushMessage` returns early and `GET /api/push/config` reports
   `enabled: false`, so the app hides the prompt rather than offering a button

@@ -78,7 +78,7 @@ class NotificationDeliveryTest extends TestCase
         // Every optional group off, which is the most a person can do.
         $user = User::factory()->create([
             'notification_preferences' => array_fill_keys(
-                array_keys(NotificationCategories::OPTIONAL),
+                NotificationCategories::OPTIONAL,
                 false,
             ),
         ]);
