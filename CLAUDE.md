@@ -397,7 +397,35 @@ shell, staff roles, settings, suspensions, public Blade site.
 directory ✅ · 16 QR + business card ✅ · 17 admin dashboard ✅.
 
 **After 17, unnumbered:** PIN reset ✅ · disputes + the receipt clock ✅ ·
-collection reminders ✅.
+collection reminders ✅ · adding a customer from the shop floor ✅.
+
+### Adding a customer from the shop floor — done
+
+`POST /api/customers` (`CustomerController`), `FoundCustomerResource`, the
+"Nobody has that number yet — add her" step on the new-order screen, and the
+claim invite on the order page. 9 new tests, 430 total. No schema change.
+
+**The hole it closes:** Section 11 built claiming, but nothing ever created a
+profile to claim — unclaimed customers existed only in test factories. A
+tailor could not take an order from anybody not already on the platform, and
+the lookup's 404 said creating one "comes with the measurements section".
+
+- **A name and a number, no PIN.** The same unclaimed profile the rest of the
+  code already understands: it cannot sign in and has consented to nothing.
+- **Nothing records which tailor added her, deliberately, and that is why no
+  column was needed.** Every rule about an unclaimed profile is already per
+  measurement set (`recorded_by`) or per invite (`issued_by`), because two
+  tailors may each meet the same walk-in.
+- **An existing customer is returned, not refused, and not renamed.** That is
+  what the tailor wanted, it makes a double tap harmless, and one tailor's
+  spelling must not overwrite the name she chose. The unique index settles a
+  race; the loser gets the winner's row.
+- **A number held by a tailor or admin is refused**, so an order cannot end up
+  addressed to somebody's staff account.
+- **The invite is on the order page, not only on the new-order screen.** An
+  unclaimed customer cannot pay or follow the tracker, so the order page shows
+  the tailor the QR / WhatsApp / code card for as long as that is true —
+  `OrderResource` now says `claimed` for each party so it can.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
 
@@ -452,7 +480,7 @@ progress, payout recorded, tailor notified, ready, collected.
 to browse or name-search every customer would have a directory of other
 people's clients, which she does not need and they did not agree to. The phone
 is the username; the customer is in the shop and reads it out. A number nobody
-has is Section 11's problem.
+has is added on the spot — see "Adding a customer from the shop floor".
 
 ### Money out — release, refunds, bank details
 

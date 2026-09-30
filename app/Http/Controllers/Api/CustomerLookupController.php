@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\FoundCustomerResource;
 use App\Models\User;
 use App\Rules\NigerianPhone;
-use App\Support\StoredFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -20,8 +20,8 @@ use Illuminate\Http\Request;
  * here; the customer is in the shop and reads it out. Anything less specific
  * gives away more than the job requires.
  *
- * A number that matches nobody is Section 11's problem: that is where a tailor
- * creates an unclaimed profile from the shop floor and invites her to claim it.
+ * A number that matches nobody is where CustomerController::store comes in:
+ * the tailor adds her from the shop floor and invites her to claim it.
  */
 class CustomerLookupController extends Controller
 {
@@ -48,17 +48,6 @@ class CustomerLookupController extends Controller
             ], 404);
         }
 
-        return response()->json([
-            'data' => [
-                'id' => $customer->id,
-                'name' => $customer->name,
-                'phone' => $customer->phone,
-                'avatar_url' => StoredFile::url($customer->avatar_url),
-                // An unclaimed profile has consented to nothing. Section 11
-                // makes that mean something; surfacing it now stops a tailor
-                // wondering why measurements are missing later.
-                'claimed' => $customer->isClaimed(),
-            ],
-        ]);
+        return response()->json(['data' => FoundCustomerResource::make($customer)->resolve($request)]);
     }
 }

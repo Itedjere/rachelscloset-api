@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\BankAccountController;
 use App\Http\Controllers\Api\BusinessCardController;
 use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\ConfigController;
+use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\CustomerLookupController;
 use App\Http\Controllers\Api\DisputeController;
 use App\Http\Controllers\Api\FileController;
@@ -147,6 +148,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     */
     Route::get('/customers/lookup', CustomerLookupController::class)
         ->middleware('throttle:30,1');
+
+    /*
+    | Adding her when the lookup finds nobody: a name and a number, no PIN,
+    | for her to claim. Throttled harder than the lookup -- each call can
+    | write a row, and a tailor at a counter adds one customer at a time.
+    */
+    Route::post('/customers', [CustomerController::class, 'store'])
+        ->middleware('throttle:10,1');
 
     /*
     | Measurements.

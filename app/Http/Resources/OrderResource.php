@@ -90,6 +90,10 @@ class OrderResource extends JsonResource
             'name' => $user->name,
             'phone' => $user->phone,
             'avatar_url' => StoredFile::url($user->avatar_url),
+            // A customer added from the shop floor cannot sign in -- so she
+            // cannot pay or follow the tracker -- until she claims. The order
+            // page puts the invite in front of the tailor while this is false.
+            'claimed' => $user->isClaimed(),
         ];
     }
 }
