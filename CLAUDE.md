@@ -78,7 +78,7 @@ Do not relitigate these without asking.
 | **Subscriptions are prepaid terms, not recurring billing** | See §5 |
 | **A lapse hides her from the directory and nothing else** | Never hold a customer's data or a half-sewn order hostage to a tailor's bill |
 | **The platform absorbs the Flutterwave charge** on escrow | The subscription is the revenue. Charging twice pushes tailors off-platform |
-| **No drag-and-drop.** Up/down arrows | Touch DnD fights page scroll on a 5-inch screen, and "press and hold" has no affordance a non-reader can decode |
+| **Arrows always; drag only beside them, from a grip** | Touch DnD fights page scroll on a 5-inch screen, and "press and hold" has no affordance a non-reader can decode. So a drag starts only on a visible grip, the only element with `touch-action: none`, and every draggable list keeps up/down arrows that need no gesture. See `useReorder` |
 | **Photo-proof gate applies only to 4- and 5-star reviews** | It exists to stop rating inflation. A complaint held in moderation reads as censorship |
 | **Rachel's Closet is the operator only** | It does not trade in the directory |
 
@@ -1162,8 +1162,11 @@ editor with arrows, and a seeded starting library of 10 Nigerian garments and
 - **Ordering is the whole array, PUT.** A move, an insert and a removal are one
   idempotent request; the server renumbers densely from one. There is no "move
   up" endpoint, so a retry on a flaky connection cannot corrupt the order.
-- **Arrows, never drag-and-drop**, for the reasons in the plan — and the play
-  button on each row is the point: a tailor arranges the list by listening.
+- **Arrows first**, for the reasons in the plan — and the play button on each
+  row is the point: a tailor arranges the list by listening. Dragging was
+  added later *beside* the arrows, never instead of them (web `2549b35`): a
+  grip starts the drag, so the rest of the row still scrolls the page, and a
+  drag near an edge scrolls too. It commits through the same whole-array PUT.
 - **Retire, never delete.** `restrictOnDelete` on the template item's step
   makes the database enforce it. A retired step cannot be added to anything new
   but stays put where it already is.
