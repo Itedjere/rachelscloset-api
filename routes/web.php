@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\DirectoryController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\PortfolioPhotoController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,7 +27,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::view('/', 'public.home')->name('home');
+// A controller, not a bare view: the landing page shows the top of the real
+// directory rather than invented tailors.
+Route::get('/', HomeController::class)->name('home');
 
 /*
 | The design language, visible. Not decoration: it is what stops the next
@@ -56,6 +60,14 @@ Route::get('/photo/{path}', PortfolioPhotoController::class)
 | Being found is the point of this section, so the sitemap is served rather
 | than written to disk -- there is no queue to regenerate it on.
 */
+/*
+| The privacy notice and the terms. Drafts until a lawyer has read them; every
+| number in them is read from platform_settings, so they cannot drift from
+| what the platform actually does.
+*/
+Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
+
 Route::get('/sitemap.xml', [DirectoryController::class, 'sitemap'])->name('sitemap');
 
 Route::get('/robots.txt', function () {
@@ -64,6 +76,8 @@ Route::get('/robots.txt', function () {
         'Allow: /',
         // The API is not a page and has nothing to index.
         'Disallow: /api/',
+        // The design language is for builders, not for anybody searching.
+        'Disallow: /styleguide',
         'Sitemap: '.route('sitemap'),
     ];
 

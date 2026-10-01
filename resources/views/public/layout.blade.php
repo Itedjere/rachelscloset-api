@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#251540">
 
-    <title>@yield('title', "Rachel's Closet")</title>
-    <meta name="description" content="@yield('description', 'Find a tailor in Nigeria, and watch your clothes being made. Rachel\'s Closet shows you every stage, from cutting to collection.')">
+    <title>@yield('title', "Rachels Closet")</title>
+    <meta name="description" content="@yield('description', 'Find a tailor in Nigeria, and watch your clothes being made. Rachels Closet shows you every stage, from cutting to collection.')">
 
     {{--
         Server-rendered on purpose. A QR code printed on cardboard in somebody's
@@ -21,10 +21,10 @@
              ranked for her name. --}}
         <meta name="robots" content="noindex, follow">
     @endif
-    <meta property="og:title" content="@yield('title', "Rachel's Closet")">
+    <meta property="og:title" content="@yield('title', "Rachels Closet")">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:site_name" content="Rachel&rsquo;s Closet">
+    <meta property="og:site_name" content="Rachels Closet">
     <meta property="og:description" content="@yield('description', 'Find a tailor in Nigeria, and watch your clothes being made.')">
     <meta property="og:image" content="{{ url('/og-image.png') }}">
     <meta property="og:image:width" content="1200">
@@ -71,14 +71,18 @@
     <div class="wrap">
         <a href="/" class="brand">
             <img src="{{ asset('brand/mark.svg') }}" width="34" height="34" alt="" aria-hidden="true">
-            <span>Rachel&rsquo;s Closet</span>
+            <span>Rachels Closet</span>
         </a>
 
         <nav data-nav>
             <a href="/#how">How it works</a>
             <a href="/#lookbook">Lookbook</a>
-            <a href="/#tailors">Tailors</a>
+            <a href="{{ route('directory') }}">Find a tailor</a>
             <a href="/#join">Join</a>
+            {{-- The way into the app. The public site had none: a tailor who
+                 already had an account could only reach it by typing the
+                 address. --}}
+            <a class="nav-signin" href="{{ $appUrl }}/sign-in">Sign in</a>
         </nav>
 
         <div class="actions">
@@ -107,7 +111,7 @@
             <div>
                 <p class="brand">
                     <img src="{{ asset('brand/mark.svg') }}" width="30" height="30" alt="" aria-hidden="true">
-                    <span>Rachel&rsquo;s Closet</span>
+                    <span>Rachels Closet</span>
                 </p>
                 <p style="font-size:.875rem;max-width:34ch">
                     A tailor should not have to be chased for an answer, and a customer
@@ -119,7 +123,7 @@
                 <h4>Explore</h4>
                 <ul>
                     <li><a href="/#lookbook">Lookbook</a></li>
-                    <li><a href="/#tailors">Find a tailor</a></li>
+                    <li><a href="{{ route('directory') }}">Find a tailor</a></li>
                     <li><a href="/#how">How it works</a></li>
                 </ul>
             </div>
@@ -127,23 +131,32 @@
             <div>
                 <h4>For tailors</h4>
                 <ul>
-                    <li><a href="/#join">Join the house</a></li>
-                    <li><a href="/styleguide">Design language</a></li>
+                    <li><a href="{{ $appUrl }}/join?as=tailor">Join the house</a></li>
+                    <li><a href="{{ $appUrl }}/sign-in">Sign in</a></li>
                 </ul>
             </div>
 
             <div>
                 <h4>Contact</h4>
+                {{-- A way to actually reach somebody: the help line from admin
+                     Settings, tap to call or to WhatsApp. It used to be a domain
+                     name and a country. --}}
                 <ul>
-                    <li>rachelscloset.com.ng</li>
+                    @if ($supportPhone)
+                        <li><a href="tel:{{ $supportPhone }}">Call {{ $supportPhone }}</a></li>
+                        <li><a href="{{ $supportWhatsapp }}" rel="noopener">WhatsApp us</a></li>
+                    @endif
                     <li>Nigeria</li>
                 </ul>
             </div>
         </div>
 
         <div class="footer__base">
-            <span>&copy; {{ date('Y') }} Rachel&rsquo;s Closet</span>
-            <span>Built without a single third-party script.</span>
+            <span>&copy; {{ date('Y') }} Rachels Closet</span>
+            <span class="footer__legal">
+                <a href="{{ route('privacy') }}">Privacy</a>
+                <a href="{{ route('terms') }}">Terms</a>
+            </span>
         </div>
     </div>
 </footer>

@@ -54,6 +54,7 @@ class RegistrationTest extends TestCase
                 'role' => 'tailor',
                 'business_name' => 'Golden Needle',
                 'location' => 'Ikeja',
+                'state' => 'Lagos',
             ]))->assertCreated();
         }
 
@@ -67,7 +68,21 @@ class RegistrationTest extends TestCase
     {
         $this->postJson('/api/register', $this->payload(['role' => 'tailor']))
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['business_name', 'location']);
+            ->assertJsonValidationErrors(['business_name', 'location', 'state']);
+    }
+
+    /**
+     * The directory's "near me" filter is an exact match, so a state typed
+     * any other way would leave her invisible in her own state.
+     */
+    public function test_a_tailors_state_must_be_one_of_the_list(): void
+    {
+        $this->postJson('/api/register', $this->payload([
+            'role' => 'tailor',
+            'business_name' => 'Golden Needle',
+            'location' => 'Ikeja',
+            'state' => 'Lagos State',
+        ]))->assertJsonValidationErrors('state');
     }
 
     public function test_the_phone_number_is_stored_one_way_however_it_is_typed(): void

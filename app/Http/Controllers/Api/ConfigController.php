@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PlatformSetting;
 use App\Services\SendPushMessage;
+use App\Support\NigerianStates;
 use App\Support\UploadLimits;
 use App\Support\WhatsApp;
 use Illuminate\Http\JsonResponse;
@@ -49,12 +50,15 @@ class ConfigController extends Controller
                  * Who a locked-out person rings. Public on purpose: the only
                  * person who needs it is somebody who cannot sign in. Null
                  * when an admin has not set one, and the page then says
-                 * "contact Rachel's Closet" rather than inventing a number.
+                 * "contact Rachels Closet" rather than inventing a number.
                  */
                 'support_phone' => $support = PlatformSetting::get(PlatformSetting::SUPPORT_PHONE) ?: null,
                 // Built here, not in the app, so the 0803 -> 234803 rule lives
                 // in one place (App\Support\WhatsApp).
                 'support_whatsapp' => $support ? WhatsApp::to($support) : null,
+
+                // The one list sign-up offers and the directory filters by.
+                'states' => NigerianStates::ALL,
             ],
         ]);
     }

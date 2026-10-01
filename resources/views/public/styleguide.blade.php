@@ -1,6 +1,9 @@
 @extends('public.layout')
 
-@section('title', "Design language — Rachel's Closet")
+@section('title', "Design language — Rachels Closet")
+{{-- A page for whoever builds the next screen, not for customers: out of
+     the public footer, and out of search results. --}}
+@section('noindex', true)
 
 @section('content')
 
@@ -35,7 +38,7 @@
             <div class="specimen-row">
                 @foreach ([96, 64, 40, 24, 16] as $size)
                     <figure>
-                        <img src="{{ asset('brand/mark.svg') }}" width="{{ $size }}" height="{{ $size }}" alt="Rachel&rsquo;s Closet mark at {{ $size }} pixels">
+                        <img src="{{ asset('brand/mark.svg') }}" width="{{ $size }}" height="{{ $size }}" alt="Rachels Closet mark at {{ $size }} pixels">
                         <figcaption>{{ $size }}</figcaption>
                     </figure>
                 @endforeach
@@ -55,12 +58,12 @@
                 </figure>
 
                 <figure style="background:#fcfaff;padding:var(--s-3);border-radius:var(--radius)">
-                    <img src="{{ asset('brand/logo.png') }}" width="220" alt="Rachel&rsquo;s Closet logo">
+                    <img src="{{ asset('brand/logo.png') }}" width="220" alt="Rachels Closet logo">
                     <figcaption style="color:#877b93">logo.png</figcaption>
                 </figure>
 
                 <figure style="background:#251540;padding:var(--s-3);border-radius:var(--radius)">
-                    <img src="{{ asset('brand/logo-on-dark.png') }}" width="220" alt="Rachel&rsquo;s Closet logo">
+                    <img src="{{ asset('brand/logo-on-dark.png') }}" width="220" alt="Rachels Closet logo">
                     <figcaption style="color:rgba(252,250,255,.6)">logo-on-dark.png</figcaption>
                 </figure>
             </div>

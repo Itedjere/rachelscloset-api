@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\User;
 use App\Rules\NigerianPhone;
 use App\Rules\Pin;
+use App\Support\NigerianStates;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -47,7 +48,13 @@ class RegisterRequest extends FormRequest
             // Only a tailor has a shop, and she cannot be listed without a name for it.
             'business_name' => ['required_if:role,tailor', 'nullable', 'string', 'max:160'],
             'location' => ['required_if:role,tailor', 'nullable', 'string', 'max:160'],
-            'state' => ['nullable', 'string', 'max:60'],
+            /*
+             * Required for a tailor, and one of the list, because the
+             * directory's "near me" filter is an exact match on it: free text
+             * like "lagos" left a tailor invisible to everybody searching her
+             * own state. Nothing to a customer.
+             */
+            'state' => ['required_if:role,tailor', 'nullable', Rule::in(NigerianStates::ALL)],
         ];
     }
 

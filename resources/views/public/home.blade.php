@@ -1,6 +1,6 @@
 @extends('public.layout')
 
-@section('title', "Rachel's Closet — Watch your clothes being made")
+@section('title', "Rachels Closet — Watch your clothes being made")
 
 @section('content')
 
@@ -41,7 +41,7 @@
                 </p>
 
                 <div class="hero__actions" data-reveal="up" style="--reveal-delay:560ms">
-                    <a class="btn" href="#tailors"><span>Find a tailor</span></a>
+                    <a class="btn" href="{{ route('directory') }}"><span>Find a tailor</span></a>
                     <a class="btn ghost on-dark" href="#join"><span>I sew &mdash; join</span></a>
                 </div>
             </div>
@@ -107,7 +107,7 @@
                         find the fabric exactly where you left it, still folded.
                     </p>
                     <p>
-                        The problem was never payment. It was not knowing. Rachel&rsquo;s Closet
+                        The problem was never payment. It was not knowing. Rachels Closet
                         gives every order a checklist your tailor ticks off as she works, and
                         your phone tells you the moment she does.
                     </p>
@@ -128,38 +128,76 @@
 
             <div class="grid-2" style="margin-bottom:var(--s-16)">
                 <div data-reveal="left">
-                    <div class="tracker">
-                        <div class="tracker__row done">
-                            <span class="tracker__tick" aria-hidden="true">&#10003;</span>
-                            <span class="tracker__label">Fabric received</span>
-                            <button type="button" class="tracker__play" aria-label="Play the voice note for this step">&#9654;</button>
+                    {{--
+                        A picture of the real tracker -- the ring, "Now", the line of
+                        stage cards -- so what the page promises is what the app shows.
+                        Static: the play buttons are drawn, not wired, so they are
+                        hidden from screen readers.
+                    --}}
+                    <figure class="mock-tracker" aria-label="An order's progress: three of six stages done, now sewing">
+                        <div class="mock-tracker__summary">
+                            <svg class="mock-ring" viewBox="0 0 80 80" aria-hidden="true">
+                                <circle class="mock-ring__track" cx="40" cy="40" r="34"/>
+                                <circle class="mock-ring__fill" cx="40" cy="40" r="34" stroke-dasharray="106.8 213.6"/>
+                                <text x="40" y="40" text-anchor="middle" class="mock-ring__count">3</text>
+                                <text x="40" y="55" text-anchor="middle" class="mock-ring__of">of 6</text>
+                            </svg>
+                            <div>
+                                <p class="mock-tracker__eyebrow">How it is going</p>
+                                <p class="mock-tracker__headline">Now: Sewing</p>
+                                <p class="mock-tracker__sub">Last stage finished on 6th March.</p>
+                            </div>
                         </div>
-                        <div class="tracker__row done">
-                            <span class="tracker__tick" aria-hidden="true">&#10003;</span>
-                            <span class="tracker__label">Measurements taken</span>
-                            <button type="button" class="tracker__play" aria-label="Play the voice note for this step">&#9654;</button>
-                        </div>
-                        <div class="tracker__row done">
-                            <span class="tracker__tick" aria-hidden="true">&#10003;</span>
-                            <span class="tracker__label">Cutting</span>
-                            <button type="button" class="tracker__play" aria-label="Play the voice note for this step">&#9654;</button>
-                        </div>
-                        <div class="tracker__row">
-                            <span class="tracker__tick" aria-hidden="true">&#10003;</span>
-                            <span class="tracker__label">Sewing</span>
-                            <button type="button" class="tracker__play" aria-label="Play the voice note for this step">&#9654;</button>
-                        </div>
-                        <div class="tracker__row">
-                            <span class="tracker__tick" aria-hidden="true">&#10003;</span>
-                            <span class="tracker__label">Finishing and pressing</span>
-                            <button type="button" class="tracker__play" aria-label="Play the voice note for this step">&#9654;</button>
-                        </div>
-                        <div class="tracker__row">
-                            <span class="tracker__tick" aria-hidden="true">&#10003;</span>
-                            <span class="tracker__label">Ready to collect</span>
-                            <button type="button" class="tracker__play" aria-label="Play the voice note for this step">&#9654;</button>
-                        </div>
-                    </div>
+
+                        <ol class="mock-stages">
+                        <li class="mock-stage is-done">
+                            <span class="mock-stage__mark" aria-hidden="true">&#10003;</span>
+                            <div class="mock-stage__card">
+                                <span class="mock-stage__label">Fabric received</span>
+                                <span class="mock-stage__when">3rd March</span>
+                                <span class="mock-stage__play" aria-hidden="true">&#9654;</span>
+                            </div>
+                        </li>
+                        <li class="mock-stage is-done">
+                            <span class="mock-stage__mark" aria-hidden="true">&#10003;</span>
+                            <div class="mock-stage__card">
+                                <span class="mock-stage__label">Measurements taken</span>
+                                <span class="mock-stage__when">3rd March</span>
+                                <span class="mock-stage__play" aria-hidden="true">&#9654;</span>
+                            </div>
+                        </li>
+                        <li class="mock-stage is-done">
+                            <span class="mock-stage__mark" aria-hidden="true">&#10003;</span>
+                            <div class="mock-stage__card">
+                                <span class="mock-stage__label">Cutting</span>
+                                <span class="mock-stage__when">6th March</span>
+                                <span class="mock-stage__play" aria-hidden="true">&#9654;</span>
+                            </div>
+                        </li>
+                        <li class="mock-stage is-current">
+                            <span class="mock-stage__mark" aria-hidden="true">4</span>
+                            <div class="mock-stage__card">
+                                <span class="mock-stage__label">Sewing</span>
+                                <span class="mock-stage__badge">Now</span>
+                                <span class="mock-stage__play" aria-hidden="true">&#9654;</span>
+                            </div>
+                        </li>
+                        <li class="mock-stage is-upcoming">
+                            <span class="mock-stage__mark" aria-hidden="true">5</span>
+                            <div class="mock-stage__card">
+                                <span class="mock-stage__label">Finishing and pressing</span>
+                                <span class="mock-stage__play" aria-hidden="true">&#9654;</span>
+                            </div>
+                        </li>
+                        <li class="mock-stage is-upcoming">
+                            <span class="mock-stage__mark" aria-hidden="true">6</span>
+                            <div class="mock-stage__card">
+                                <span class="mock-stage__label">Ready to collect</span>
+                                <span class="mock-stage__play" aria-hidden="true">&#9654;</span>
+                            </div>
+                        </li>
+                        </ol>
+                    </figure>
                 </div>
 
                 <div data-reveal="right">
@@ -240,43 +278,76 @@
          ===================================================================== --}}
     <section class="section on-cream" id="tailors">
         <div class="wrap">
-            <div class="carousel" data-carousel data-reveal="up">
-                <div class="carousel__head">
-                    <div class="section-head" style="margin-bottom:0">
-                        <p class="eyebrow">The house</p>
-                        <h2>Tailors taking work now.</h2>
+            {{--
+                The top of the REAL directory, ranked exactly as /tailors ranks it --
+                through HomeController and TailorRanking, so nobody appears here that
+                the directory would hide. These used to be five invented shops.
+            --}}
+            @if ($tailors->isNotEmpty())
+                <div class="carousel" data-carousel data-reveal="up">
+                    <div class="carousel__head">
+                        <div class="section-head" style="margin-bottom:0">
+                            <p class="eyebrow">The house</p>
+                            <h2>Tailors taking work now.</h2>
+                        </div>
+
+                        <div class="carousel__nav">
+                            <button type="button" data-carousel-prev aria-label="Previous tailors">&#8592;</button>
+                            <button type="button" data-carousel-next aria-label="More tailors">&#8594;</button>
+                        </div>
                     </div>
 
-                    <div class="carousel__nav">
-                        <button type="button" data-carousel-prev aria-label="Previous tailors">&#8592;</button>
-                        <button type="button" data-carousel-next aria-label="More tailors">&#8594;</button>
-                    </div>
-                </div>
-
-                <div class="carousel__track" data-carousel-track tabindex="0" aria-label="Tailors">
-                    @foreach (config('gallery.tailors') as $index => $tailor)
-                        <article class="tailor" style="--card-index:{{ $index }}">
-                            @include('public.partials.photo', [
-                                'image' => $tailor,
-                                'ratio' => 'portrait',
-                                'class' => 'zoom',
-                                'w' => 600,
-                                'sizes' => '(max-width: 720px) 80vw, 30vw',
-                            ])
-
-                            <div>
-                                <div class="tailor__meta">
-                                    <h3>{{ $tailor['name'] }}</h3>
-                                    <span class="stars" aria-label="{{ $tailor['rating'] }} out of 5">
-                                        {!! str_repeat('&#9733;', $tailor['rating']) !!}
-                                    </span>
+                    <div class="carousel__track" data-carousel-track tabindex="0" aria-label="Tailors">
+                        @foreach ($tailors as $index => $profile)
+                            @php($cover = ($covers[$profile->user_id] ?? collect())->first())
+                            <a class="tailor" href="{{ route('tailor', $profile->slug) }}" style="--card-index:{{ $index }}">
+                                <div class="frame portrait zoom">
+                                    @if ($cover)
+                                        <img src="{{ route('portfolio.photo', basename($cover->path)) }}"
+                                             alt="Work by {{ $profile->business_name }}"
+                                             loading="lazy" decoding="async">
+                                    @else
+                                        {{-- No gallery yet. A monogram beats an empty frame. --}}
+                                        <span class="tailor-card__initial" aria-hidden="true">
+                                            {{ Str::upper(Str::substr($profile->business_name, 0, 1)) }}
+                                        </span>
+                                    @endif
                                 </div>
-                                <p class="where">{{ $tailor['where'] }}</p>
-                            </div>
-                        </article>
-                    @endforeach
+
+                                <div>
+                                    <div class="tailor__meta">
+                                        <h3>{{ $profile->business_name }}</h3>
+                                        @if ($profile->review_count > 0)
+                                            <span class="stars" aria-label="{{ number_format((float) $profile->avg_rating, 1) }} out of 5">
+                                                {!! str_repeat('&#9733;', (int) round($profile->avg_rating)) !!}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="where">
+                                        {{ collect([$profile->location, $profile->state])->filter()->join(', ') ?: 'New here' }}
+                                    </p>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+
+                <p class="tailors-all" data-reveal="up">
+                    <a class="btn ghost" href="{{ route('directory') }}">
+                        <span>See all {{ $tailorsTotal }} {{ Str::plural('tailor', $tailorsTotal) }} &rarr;</span>
+                    </a>
+                </p>
+            @else
+                {{-- Nobody listed yet: an invitation, not an empty carousel. --}}
+                <div class="section-head" data-reveal="up">
+                    <p class="eyebrow">The house</p>
+                    <h2>The Fashion House is opening.</h2>
+                    <p>The first tailors are joining now. If you sew, be one of them.</p>
+                    <p style="margin-top:var(--s-6)">
+                        <a class="btn" href="{{ $appUrl }}/join?as=tailor"><span>Join the house</span></a>
+                    </p>
+                </div>
+            @endif
         </div>
     </section>
 
@@ -346,7 +417,9 @@
                         visible while you are doing it.
                     </p>
                     <p style="margin-top:var(--s-8)">
-                        <a class="btn" href="/#join"><span>Join the house</span></a>
+                        {{-- It used to link to this very section, so "Join the house"
+                             went nowhere. It now opens sign-up, already set to tailor. --}}
+                        <a class="btn" href="{{ $appUrl }}/join?as=tailor"><span>Join the house</span></a>
                     </p>
                 </div>
             </div>
@@ -414,7 +487,7 @@
                 Free for customers. Always.
             </p>
             <p style="margin-top:var(--s-8)" data-reveal="up">
-                <a class="btn" href="#tailors"><span>Find a tailor</span></a>
+                <a class="btn" href="{{ route('directory') }}"><span>Find a tailor</span></a>
             </p>
         </div>
     </section>
