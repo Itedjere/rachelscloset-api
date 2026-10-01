@@ -335,7 +335,8 @@ customer stranding the tailor's money.
 Seeded with `firstOrCreate`, so re-running never undoes an admin. Keys are
 constants on the model: subscription price monthly/yearly, term lengths, grace
 days, review proof threshold and minimum steps, default suspension days,
-notification retention (read/unread) and `notifications_pruned_at`.
+notification retention (read/unread), `support_phone` (the number a
+locked-out person rings — the only non-numeric row) and `notifications_pruned_at`.
 
 `notifications_pruned_at` is written by the prune command and read by nobody to
 make a decision. It exists so a cron that has quietly stopped shows on the admin
@@ -444,8 +445,36 @@ PIN, and two things made that route unusable:
   ("this lets her keep seeing your measurements"), because it had no preview
   to name the tailor from. Step two now shows it, as the link route always did.
 
-**Not yet done:** `PinReset.tsx` has the same two-rows-of-six layout (the
-admin's reset code, then the new PIN) and would take the same split.
+### Forgot PIN — a number to ring, and the same two steps
+
+`/forgot`, `PlatformSetting::SUPPORT_PHONE` (seeded 08152070480), `POST
+/api/reset/check`, `App\Support\WhatsApp`. 18 new tests, 448 total.
+
+- **There is still no self-service reset, and this does not add one.** The
+  reset is admin-issued for the reasons in the PIN reset section. What was
+  missing was the door: nothing on sign-in mentioned a forgotten PIN, and
+  nothing anywhere said who to ring. "Forgot your PIN?" now leads to a page
+  whose whole content is that number — tap to call, or WhatsApp — and "I have
+  my six numbers".
+- **The number is a setting, not a constant**: a changed SIM must not need a
+  deploy, or the platform advertises a dead line to exactly the people who
+  cannot get in. It is the first non-numeric row on the admin Settings screen
+  (`phone: true`), validated as a Nigerian number and stored normalised. It is
+  in the public `/api/config`, because the only person who needs it cannot
+  sign in; unset is `null` and the page falls back to "contact Rachel's
+  Closet" rather than showing an empty button.
+- **The reset page got the claim page's two-step split**, with `/reset/check`
+  sharing a named `reset` limiter (6/min, tighter than claim's 8, because the
+  code opens an account with money in it). The admin's reset card now gives
+  the whole sentence to say, address included (`reset_page`).
+
+**A bug this found, pre-existing in four places: every `wa.me` link to a
+person was wrong.** Phones are stored `0803…` and wa.me needs `234803…`;
+stripping non-digits gave `wa.me/0803…`, which opens a chat with nobody. That
+was the "Message her on WhatsApp" button on a tailor's public page — the one
+a customer taps after scanning a printed card — as well as both dispute
+contacts and the admin's reset link. `App\Support\WhatsApp::to()` is now the
+only way to build one, and `PinResetTest` had been asserting the broken form.
 
 ### Sections 4 and 5 — orders and the money spine — partly done
 

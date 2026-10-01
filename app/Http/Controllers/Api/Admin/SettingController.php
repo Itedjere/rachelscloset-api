@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PlatformSetting;
+use App\Rules\NigerianPhone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -31,9 +32,19 @@ class SettingController extends Controller
      * Said here rather than guessed from the label in the client: "(naira)"
      * in a string is not a contract.
      *
-     * @var array<string, array{label: string, help: string, min: int, max: int, group: string, money?: bool}>
+     * `phone` marks the one row that is not a number at all, so it is
+     * validated as a Nigerian phone and its min/max are meaningless.
+     *
+     * @var array<string, array{label: string, help: string, min: int, max: int, group: string, money?: bool, phone?: bool}>
      */
     private const EDITABLE = [
+        PlatformSetting::SUPPORT_PHONE => [
+            'label' => 'Phone number for help',
+            'help' => 'Shown to anybody who forgot her PIN: she rings this, and an admin '
+                .'gives her six numbers from the People screen. Check it rings.',
+            'phone' => true,
+            'min' => 0, 'max' => 0, 'group' => 'Contact',
+        ],
         PlatformSetting::PORTFOLIO_MAX_OWN => [
             'label' => 'Photographs a tailor may add to her own profile',
             'help' => 'So a new tailor has a gallery before her first order.',
@@ -121,6 +132,7 @@ class SettingController extends Controller
             'key' => $key,
             'value' => (string) PlatformSetting::get($key, ''),
             'money' => false,
+            'phone' => false,
             ...$meta,
         ])->values();
 
@@ -131,22 +143,32 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'key' => ['required', Rule::in(array_keys(self::EDITABLE))],
-            'value' => ['required', 'integer'],
+            'value' => ['required'],
         ]);
 
         $meta = self::EDITABLE[$validated['key']];
 
-        // Bounds per key, because "0 days to collect" and "100000 photographs"
-        // are both ways to break the platform from a settings screen.
-        $request->validate([
-            'value' => ['integer', 'min:'.$meta['min'], 'max:'.$meta['max']],
-        ]);
+        if ($meta['phone'] ?? false) {
+            // A typo here is a dead line on the page a locked-out person
+            // reads, so it must at least be a real Nigerian number -- stored
+            // in the one canonical form, like every other phone here.
+            $request->validate(['value' => ['string', new NigerianPhone]], [], ['value' => 'phone number']);
+            $value = NigerianPhone::normalise($request->string('value')->value());
+        } else {
+            // Bounds per key, because "0 days to collect" and "100000
+            // photographs" are both ways to break the platform from a
+            // settings screen.
+            $request->validate([
+                'value' => ['integer', 'min:'.$meta['min'], 'max:'.$meta['max']],
+            ]);
+            $value = (string) (int) $validated['value'];
+        }
 
-        PlatformSetting::set($validated['key'], (string) $validated['value']);
+        PlatformSetting::set($validated['key'], $value);
 
         return response()->json(['data' => [
             'key' => $validated['key'],
-            'value' => (string) $validated['value'],
+            'value' => $value,
         ]]);
     }
 }

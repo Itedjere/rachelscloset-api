@@ -10,6 +10,7 @@ use App\Notifications\AccountReinstated;
 use App\Notifications\AccountSuspended;
 use App\Rules\NigerianPhone;
 use App\Services\Qr\QrCode;
+use App\Support\WhatsApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -158,10 +159,14 @@ class UserController extends Controller
 
         $issued = ClaimToken::issue($user, $request->user(), ClaimToken::PIN_RESET);
 
-        $link = rtrim((string) config('app.frontend_url'), '/').'/reset/'.$issued['link_token'];
+        $resetPage = rtrim((string) config('app.frontend_url'), '/').'/reset';
+        $link = $resetPage.'/'.$issued['link_token'];
 
         return response()->json(['data' => [
             'code' => $issued['code'],
+            // Where a spoken code is typed, so the admin can say the address
+            // along with the six digits rather than leaving her to find it.
+            'reset_page' => $resetPage,
             'link' => $link,
             'qr_svg' => $qr->svg($link),
             /*
@@ -169,10 +174,10 @@ class UserController extends Controller
              * Business API -- it opens the app she already has, with a
              * message ready to send, and costs nobody anything.
              */
-            'whatsapp_url' => 'https://wa.me/'.preg_replace('/\D/', '', $user->phone)
-                .'?text='.rawurlencode(
-                    "Hello {$user->name}, here is your way back into Rachel's Closet: {$link}"
-                ),
+            'whatsapp_url' => WhatsApp::to(
+                $user->phone,
+                "Hello {$user->name}, here is your way back into Rachel's Closet: {$link}",
+            ),
             'expires_at' => $issued['token']->expires_at,
             'expires_in_hours' => ClaimToken::RESET_LIFETIME_HOURS,
         ]]);

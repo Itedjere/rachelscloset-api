@@ -73,7 +73,7 @@
             --}}
             @if ($profile->whatsapp_phone)
                 <a class="btn" rel="noopener"
-                   href="https://wa.me/{{ preg_replace('/\D/', '', $profile->whatsapp_phone) }}">
+                   href="{{ \App\Support\WhatsApp::to($profile->whatsapp_phone) }}">
                     <span>Message on WhatsApp</span>
                 </a>
             @endif
@@ -185,7 +185,7 @@
         @if ($profile->whatsapp_phone)
             <p style="margin-top:var(--s-8)" data-reveal="up">
                 <a class="btn" rel="noopener"
-                   href="https://wa.me/{{ preg_replace('/\D/', '', $profile->whatsapp_phone) }}">
+                   href="{{ \App\Support\WhatsApp::to($profile->whatsapp_phone) }}">
                     <span>Message her on WhatsApp</span>
                 </a>
             </p>

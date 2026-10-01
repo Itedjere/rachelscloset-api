@@ -10,6 +10,7 @@ use App\Notifications\DisputeResolved;
 use App\Notifications\OrderDisputed;
 use App\Services\Payments\RefundOrder;
 use App\Services\Payments\ReleasePayout;
+use App\Support\WhatsApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -212,7 +213,7 @@ class DisputeController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'phone' => $user->phone,
-            'whatsapp' => 'https://wa.me/'.preg_replace('/\D/', '', $user->phone),
+            'whatsapp' => WhatsApp::to($user->phone),
         ] : null;
     }
 }

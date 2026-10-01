@@ -32,5 +32,9 @@ class AppServiceProvider extends ServiceProvider
          * that uses it, so adding that door did not double the rate.
          */
         RateLimiter::for('claim', fn (Request $request) => Limit::perMinute(8)->by($request->ip()));
+
+        // The same, for a PIN reset code -- tighter, because that code opens
+        // an account that already has orders, money and measurements in it.
+        RateLimiter::for('reset', fn (Request $request) => Limit::perMinute(6)->by($request->ip()));
     }
 }

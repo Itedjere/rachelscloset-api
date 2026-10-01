@@ -30,6 +30,7 @@ class PlatformSettingSeeder extends Seeder
         PlatformSetting::DIRECTORY_REQUIRES_SUBSCRIPTION => '1',
         PlatformSetting::NOTIFICATION_READ_RETENTION_DAYS => '14',
         PlatformSetting::NOTIFICATION_UNREAD_RETENTION_DAYS => '30',
+        PlatformSetting::SUPPORT_PHONE => '08152070480',
     ];
 
     public function run(): void

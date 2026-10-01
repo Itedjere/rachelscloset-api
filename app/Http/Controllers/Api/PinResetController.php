@@ -64,6 +64,28 @@ class PinResetController extends Controller
     }
 
     /**
+     * Is this spoken code right? Asked BEFORE she chooses a new PIN.
+     *
+     * The same split as ClaimController::check, for the same reason: without
+     * it the page showed the six numbers she was read and the six she is
+     * choosing as two rows of identical boxes. Consumes nothing; the reset
+     * re-checks everything. Shares the `reset` rate limiter with the reset
+     * itself, so it is not a second budget of guesses at a code that opens an
+     * account with money in it.
+     */
+    public function check(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:6'],
+            'phone' => ['required', 'string', new NigerianPhone],
+        ]);
+
+        [, $user] = $this->resolve($this->byCode($validated['phone'], $validated['code']));
+
+        return response()->json(['data' => ['name' => $user->name]]);
+    }
+
+    /**
      * Choose a new one.
      *
      * By link or by spoken code, exactly as claiming works. Six digits are not
@@ -80,19 +102,9 @@ class PinResetController extends Controller
             'pin' => ['required', 'confirmed', new Pin],
         ]);
 
-        $reset = isset($validated['token'])
+        [$reset, $user] = $this->resolve(isset($validated['token'])
             ? ClaimToken::findByLinkToken($validated['token'])
-            : $this->byCode($validated['phone'], $validated['code']);
-
-        // One message for every failure. Saying which part was wrong turns
-        // this into a way of discovering whose numbers are registered here.
-        $this->refuse($reset === null);
-        $this->refuse(! $reset->isUsable());
-        $this->refuse($reset->purpose !== ClaimToken::PIN_RESET);
-
-        $user = $reset->user;
-
-        $this->refuse($user === null);
+            : $this->byCode($validated['phone'], $validated['code']));
 
         // The PIN must not be derivable from the phone number she is about to
         // sign in with. App\Rules\Pin needs the number to check that.
@@ -134,6 +146,28 @@ class PinResetController extends Controller
             'token' => $token,
             'user' => $user->fresh()->only(['id', 'name', 'phone', 'role']),
         ]);
+    }
+
+    /**
+     * The reset and its account, or the one refusal.
+     *
+     * Shared by the check and the reset so they cannot disagree about what a
+     * usable code is. One message for every failure: saying which part was
+     * wrong turns this into a way of discovering whose numbers are here.
+     *
+     * @return array{0: ClaimToken, 1: User}
+     */
+    private function resolve(?ClaimToken $reset): array
+    {
+        $this->refuse($reset === null);
+        $this->refuse(! $reset->isUsable());
+        $this->refuse($reset->purpose !== ClaimToken::PIN_RESET);
+
+        $user = $reset->user;
+
+        $this->refuse($user === null);
+
+        return [$reset, $user];
     }
 
     private function byCode(string $phone, string $code): ?ClaimToken

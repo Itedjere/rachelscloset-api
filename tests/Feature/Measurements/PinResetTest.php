@@ -68,8 +68,61 @@ class PinResetTest extends TestCase
 
         // Her own WhatsApp, with the number prefilled. Not the Business API,
         // so nobody is billed per conversation.
-        $this->assertStringStartsWith('https://wa.me/', $data['whatsapp_url']);
-        $this->assertStringContainsString('08031112233', $data['whatsapp_url']);
+        // wa.me needs the international number with no leading zero. This
+        // test used to assert 08031112233 appeared, which pinned a link that
+        // opened a chat with nobody.
+        $this->assertStringStartsWith('https://wa.me/2348031112233?text=', $data['whatsapp_url']);
+        $this->assertStringEndsWith('/reset', $data['reset_page']);
+    }
+
+    /** Checked before she sees the PIN boxes; checking uses nothing up. */
+    public function test_a_spoken_reset_code_is_checked_before_she_chooses_a_pin(): void
+    {
+        $data = $this->issue();
+        $this->app['auth']->forgetGuards();
+
+        $this->postJson('/api/reset/check', ['code' => $data['code'], 'phone' => '0803 111 2233'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Ngozi Okeke');
+
+        $this->assertNull(ClaimToken::query()->sole()->used_at);
+
+        $this->postJson('/api/reset', [
+            'code' => $data['code'],
+            'phone' => '08031112233',
+            'pin' => '493028',
+            'pin_confirmation' => '493028',
+        ])->assertOk();
+    }
+
+    public function test_the_reset_check_refuses_with_the_one_message(): void
+    {
+        $data = $this->issue();
+
+        $wrongCode = $this->postJson('/api/reset/check', ['code' => '000000', 'phone' => '08031112233'])
+            ->assertStatus(422)->json('errors.code.0');
+        $wrongPhone = $this->postJson('/api/reset/check', ['code' => $data['code'], 'phone' => '08035550000'])
+            ->assertStatus(422)->json('errors.code.0');
+
+        $this->assertSame($wrongCode, $wrongPhone);
+    }
+
+    /** A second door onto the same guess spends the same, tighter allowance. */
+    public function test_checking_and_resetting_share_one_allowance_of_guesses(): void
+    {
+        $data = $this->issue();
+
+        for ($i = 0; $i < 6; $i++) {
+            $this->postJson('/api/reset/check', ['code' => '000000', 'phone' => '08031112233'])
+                ->assertStatus(422);
+        }
+
+        $this->postJson('/api/reset', [
+            'code' => $data['code'],
+            'phone' => '08031112233',
+            'pin' => '493028',
+            'pin_confirmation' => '493028',
+        ])->assertStatus(429);
     }
 
     /** Plaintext exists in that response and nowhere else. */

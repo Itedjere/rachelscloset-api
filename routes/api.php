@@ -96,7 +96,9 @@ Route::post('/claim', [ClaimController::class, 'claim'])->middleware('throttle:c
 | standing in front of that.
 */
 Route::get('/reset/{token}', [PinResetController::class, 'preview'])->middleware('throttle:20,1');
-Route::post('/reset', [PinResetController::class, 'reset'])->middleware('throttle:6,1');
+// The check and the reset share one named allowance -- see AppServiceProvider.
+Route::post('/reset/check', [PinResetController::class, 'check'])->middleware('throttle:reset');
+Route::post('/reset', [PinResetController::class, 'reset'])->middleware('throttle:reset');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('/me', [AuthController::class, 'me']);

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Rules\NigerianPhone;
 use App\Rules\Pin;
 use App\Services\Qr\QrCode;
+use App\Support\WhatsApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -242,6 +243,6 @@ class ClaimController extends Controller
         $message = "Hello {$customer->name}, here is your Rachel's Closet account. "
             ."Open this to finish setting it up: {$link}";
 
-        return 'https://wa.me/?text='.rawurlencode($message);
+        return WhatsApp::share($message);
     }
 }
