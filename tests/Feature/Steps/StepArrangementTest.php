@@ -40,6 +40,25 @@ class StepArrangementTest extends TestCase
         return array_column($response->json('data.steps'), 'label');
     }
 
+    /**
+     * A customer sews nothing, so she has no arrangement to write. Before
+     * this, a save created one owned by her that nothing would ever read.
+     */
+    public function test_a_customer_cannot_write_an_arrangement(): void
+    {
+        Sanctum::actingAs(User::factory()->customer()->create());
+
+        $this->putJson("/api/garment-types/{$this->garment->id}/steps", ['steps' => $this->ids('Cutting')])
+            ->assertForbidden();
+        $this->deleteJson("/api/garment-types/{$this->garment->id}/steps")->assertForbidden();
+
+        $this->assertSame(0, StepTemplate::query()->whereNotNull('owner_id')->count());
+
+        // Reading stays open: the labels and recordings are the same ones
+        // her order's tracker plays.
+        $this->getJson("/api/garment-types/{$this->garment->id}/steps")->assertOk();
+    }
+
     public function test_an_admin_sets_the_default_arrangement(): void
     {
         Sanctum::actingAs(User::factory()->admin()->create());

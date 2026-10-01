@@ -290,8 +290,15 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('/garment-types', [GarmentTypeController::class, 'index']);
     Route::get('/steps', [StepTemplateController::class, 'library']);
     Route::get('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'show']);
-    Route::put('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'update']);
-    Route::delete('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'destroy']);
+    /*
+    | Writing one is for whoever makes clothes or curates the library. A
+    | customer has no arrangement: StepTemplateController would otherwise
+    | have created her one on first save, owned by somebody who sews nothing.
+    */
+    Route::middleware('role:'.User::ROLE_TAILOR.','.User::ROLE_ADMIN)->group(function (): void {
+        Route::put('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'update']);
+        Route::delete('/garment-types/{garmentType}/steps', [StepTemplateController::class, 'destroy']);
+    });
 
     Route::prefix('admin')->middleware('role:'.User::ROLE_ADMIN)->group(function (): void {
         /*
