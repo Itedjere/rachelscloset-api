@@ -2542,3 +2542,900 @@
 .fh-invite h2 {
   margin: var(--s-2) 0 0;
 }
+
+/* ===========================================================================
+   One tailor's page -- her house front
+
+   The address on her printed card, so it has to look like the house it
+   belongs to: the Fashion House's dark masthead and glow, her name set like
+   a label's, her work beside it from the first screen. Prefix `tp-`.
+   =========================================================================== */
+
+/* ---- The house front --------------------------------------------------------- */
+
+.tp-hero {
+  position: relative;
+  overflow: hidden;
+  padding: calc(78px + clamp(2.5rem, 7vh, 5rem)) 0 clamp(3rem, 8vh, 5.5rem);
+  background: var(--violet-ink);
+  color: var(--on-dark);
+}
+
+.tp-hero__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+}
+
+.tp-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-bottom: var(--s-5);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--champagne-soft);
+}
+
+.tp-crumbs a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-fast);
+}
+
+.tp-crumbs a:hover {
+  border-bottom-color: currentColor;
+}
+
+.tp-crumbs span {
+  opacity: 0.5;
+}
+
+.tp-hero__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 7.5vw, 6rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  color: var(--on-dark);
+  overflow-wrap: anywhere;
+}
+
+.tp-hero__name em {
+  font-style: italic;
+  color: var(--champagne-soft);
+}
+
+.tp-hero__where {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-5) 0 0;
+  font-size: var(--fs-lead);
+  color: rgba(252, 250, 255, 0.78);
+}
+
+.tp-hero__where svg {
+  flex: none;
+  color: var(--champagne-soft);
+}
+
+.tp-hero__signals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-5);
+  margin-top: var(--s-6);
+}
+
+/* The live fact, as a pill: the most important thing this page can say. */
+.tp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65em;
+  padding: 0.55rem 1rem 0.55rem 0.9rem;
+  border: 1px solid rgba(252, 250, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(252, 250, 255, 0.07);
+  font-size: var(--fs-small);
+  color: rgba(252, 250, 255, 0.85);
+}
+
+.tp-status.is-live {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.08);
+  color: var(--on-dark);
+}
+
+.tp-hero__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-small);
+  color: rgba(252, 250, 255, 0.72);
+  text-decoration: none;
+}
+
+.tp-hero__rating strong {
+  color: var(--on-dark);
+  font-size: 1rem;
+}
+
+.tp-hero__rating:hover span:last-child {
+  text-decoration: underline;
+}
+
+.tp-stars {
+  display: inline-flex;
+  gap: 1px;
+  margin: 0;
+  color: rgba(252, 250, 255, 0.25);
+  letter-spacing: 0.04em;
+}
+
+.tp-stars .on {
+  color: var(--champagne-soft);
+}
+
+.tp-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-8);
+}
+
+.tp-wa svg {
+  position: relative;
+  z-index: 1;
+}
+
+.tp-share {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 48px;
+  padding: 0 var(--s-4);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(252, 250, 255, 0.78);
+  font: inherit;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+
+.tp-share:hover {
+  background: rgba(252, 250, 255, 0.08);
+  color: var(--on-dark);
+}
+
+/* ---- Her work beside her name ------------------------------------------------- */
+
+.tp-collage {
+  position: relative;
+  display: grid;
+  gap: var(--s-3);
+  height: clamp(340px, 52vh, 540px);
+}
+
+/* A champagne thread offset behind the spread, the way a mount sits behind a
+   photograph in a frame. */
+.tp-collage::before {
+  content: "";
+  position: absolute;
+  inset: 22px -14px -14px 22px;
+  border: 1px solid rgba(226, 205, 160, 0.45);
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.tp-collage__item {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--violet-deep);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.35);
+}
+
+.tp-collage__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.tp-collage__item:hover img {
+  transform: scale(1.04);
+}
+
+.tp-collage--2 {
+  grid-template-columns: 1.3fr 1fr;
+}
+
+.tp-collage--2 .tp-collage__item:nth-child(2) {
+  margin-top: 18%;
+}
+
+.tp-collage--3 {
+  grid-template-columns: 1.35fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.tp-collage--3 .tp-collage__item:first-child {
+  grid-row: span 2;
+}
+
+/* Nothing uploaded yet: her initial, struck like a seal. */
+.tp-collage--0::before {
+  display: none;
+}
+
+.tp-seal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 380px);
+  aspect-ratio: 1;
+  margin: auto;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgba(178, 140, 224, 0.28), transparent),
+    var(--violet-deep);
+  box-shadow: inset 0 0 0 1px rgba(226, 205, 160, 0.35), 0 24px 56px rgba(0, 0, 0, 0.35);
+}
+
+.tp-seal__ring {
+  position: absolute;
+  inset: 18px;
+  border: 1.5px dashed rgba(226, 205, 160, 0.4);
+  border-radius: 50%;
+}
+
+.tp-seal__initial {
+  font-family: var(--font-display);
+  font-size: clamp(6rem, 14vw, 9rem);
+  font-style: italic;
+  line-height: 1;
+  color: var(--champagne-soft);
+}
+
+.tp-seal__label {
+  position: absolute;
+  bottom: 22%;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(252, 250, 255, 0.55);
+}
+
+/* ---- The facts ---------------------------------------------------------------- */
+
+.tp-facts {
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.tp-facts__row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  margin: 0;
+}
+
+.tp-facts__row > div {
+  padding: clamp(1.25rem, 3vw, 2rem) var(--s-4);
+  text-align: center;
+}
+
+.tp-facts__row > div + div {
+  border-left: 1px solid var(--line);
+}
+
+.tp-facts dt {
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+.tp-facts dd {
+  margin: var(--s-2) 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1;
+  color: var(--ink);
+}
+
+.tp-facts dd small {
+  margin-left: 0.15em;
+  font-size: 0.55em;
+  color: var(--champagne);
+  vertical-align: 0.35em;
+}
+
+.tp-facts__date {
+  font-style: italic;
+}
+
+/* ---- The house, and how it works ------------------------------------------------ */
+
+.tp-about__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2.5rem, 6vw, 6rem);
+  /* The bio sits level with the middle of the three cards, not pinned above
+     them with empty space below. */
+  align-items: center;
+}
+
+.tp-about__bio {
+  margin: 0;
+  max-width: 30ch;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.tp-about__bio::first-letter {
+  float: left;
+  margin: 0.08em 0.1em 0 0;
+  font-size: 3.1em;
+  font-style: italic;
+  line-height: 0.8;
+  color: var(--lilac);
+}
+
+.tp-steps {
+  display: grid;
+  gap: var(--s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: tp-step;
+}
+
+.tp-steps li {
+  position: relative;
+  display: flex;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  counter-increment: tp-step;
+  transition: border-color var(--dur-fast), transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+}
+
+.tp-steps li:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+/* The number, quiet, in the corner -- the order matters, but the picture is
+   what is read first. */
+.tp-steps li::after {
+  content: "0" counter(tp-step);
+  position: absolute;
+  top: var(--s-4);
+  right: var(--s-5);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--ink-mute);
+}
+
+.tp-steps__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+}
+
+.tp-steps li:nth-child(3) .tp-steps__icon {
+  background: var(--champagne-tint);
+  color: var(--champagne);
+}
+
+.tp-steps h3 {
+  margin: 0 0 var(--s-1);
+  padding-right: 2rem;
+  font-size: 1.2rem;
+}
+
+.tp-steps p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ---- Section heads with something on the right ------------------------------------ */
+
+.tp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-3) var(--s-6);
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.tp-head h2 {
+  margin: 0;
+}
+
+.tp-head .eyebrow {
+  margin-bottom: var(--s-3);
+}
+
+.tp-head__aside {
+  margin: 0;
+  color: var(--ink-mute);
+  font-size: var(--fs-small);
+}
+
+.tp-head__link {
+  color: var(--lilac);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tp-head__link:hover {
+  text-decoration: underline;
+}
+
+/* ---- The lookbook ------------------------------------------------------------------ */
+
+.tp-lookbook {
+  background: var(--cream);
+}
+
+/* Columns, so every photograph keeps its own shape and nothing leaves a hole. */
+.tp-masonry {
+  columns: 3;
+  column-gap: clamp(0.75rem, 1.6vw, 1.25rem);
+}
+
+/* One or two photographs: portrait tiles side by side. A lone picture at
+   full column width ran a whole screen tall. */
+.tp-masonry--few {
+  columns: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(0, 340px));
+  gap: clamp(0.75rem, 1.6vw, 1.25rem);
+}
+
+.tp-masonry--few .tp-piece {
+  margin: 0;
+  aspect-ratio: 4 / 5;
+}
+
+.tp-masonry--few .tp-piece img {
+  height: 100%;
+  object-fit: cover;
+}
+
+.tp-piece {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0 0 clamp(0.75rem, 1.6vw, 1.25rem);
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 14px;
+  background: var(--violet-deep);
+  cursor: zoom-in;
+  break-inside: avoid;
+  box-shadow: var(--shadow-sm);
+}
+
+.tp-piece img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.tp-piece:hover img,
+.tp-piece:focus-visible img {
+  transform: scale(1.035);
+}
+
+.tp-piece:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 3px;
+}
+
+.tp-piece__caption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: var(--s-8) var(--s-4) var(--s-4);
+  background: linear-gradient(0deg, rgba(37, 21, 64, 0.85), transparent);
+  color: var(--on-dark);
+  font-size: var(--fs-small);
+  text-align: left;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+
+.tp-piece:hover .tp-piece__caption,
+.tp-piece:focus-visible .tp-piece__caption {
+  opacity: 1;
+  transform: none;
+}
+
+/* No hover on a phone: the caption simply shows. */
+@media (hover: none) {
+  .tp-piece__caption {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- In their words ------------------------------------------------------------------ */
+
+.tp-reviews__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: start;
+}
+
+.tp-score {
+  position: sticky;
+  top: 110px;
+  padding: var(--s-8) var(--s-6);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.tp-score__number {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 5rem;
+  line-height: 0.9;
+  color: var(--ink);
+}
+
+.tp-score .tp-stars,
+.tp-voices .tp-stars {
+  color: var(--line-strong);
+}
+
+.tp-score .tp-stars .on,
+.tp-voices .tp-stars .on {
+  color: var(--champagne);
+}
+
+.tp-stars--large {
+  margin-top: var(--s-3);
+  font-size: 1.5rem;
+}
+
+.tp-stars--small {
+  font-size: 0.85rem;
+}
+
+.tp-score__from {
+  margin: var(--s-3) 0 var(--s-6);
+  color: var(--ink-soft);
+  font-size: var(--fs-small);
+}
+
+.tp-bars {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-bars li {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr 1.8rem;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-small);
+  color: var(--ink-soft);
+}
+
+.tp-bars__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--cream);
+  overflow: hidden;
+}
+
+.tp-bars__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--champagne), var(--champagne-soft));
+}
+
+.tp-bars__count {
+  text-align: right;
+}
+
+.tp-quote {
+  position: relative;
+  margin: 0 0 var(--s-8);
+  padding: clamp(2rem, 4vw, 3rem);
+  border-radius: 20px;
+  background: var(--violet-ink);
+  color: var(--on-dark);
+  overflow: hidden;
+}
+
+.tp-quote__mark {
+  position: absolute;
+  top: -0.2em;
+  right: 0.15em;
+  font-family: var(--font-display);
+  font-size: 12rem;
+  line-height: 1;
+  color: rgba(226, 205, 160, 0.18);
+  pointer-events: none;
+}
+
+.tp-quote blockquote {
+  position: relative;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.tp-quote figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-4);
+  margin-top: var(--s-6);
+  font-size: var(--fs-small);
+  color: rgba(252, 250, 255, 0.7);
+}
+
+.tp-quote figcaption strong {
+  color: var(--on-dark);
+}
+
+.tp-quote .tp-stars {
+  color: rgba(252, 250, 255, 0.25);
+}
+
+.tp-quote .tp-stars .on {
+  color: var(--champagne-soft);
+}
+
+.tp-review-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+
+.tp-review {
+  margin: 0;
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.tp-review__top {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.tp-review__top strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.tp-review__when {
+  margin-left: auto;
+  color: var(--ink-mute);
+  font-size: 0.8rem;
+}
+
+.tp-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.tp-review blockquote {
+  margin: var(--s-4) 0 0;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ---- The invitation, and more of the house ------------------------------------------- */
+
+/* Room above "Start today" and below the buttons. The landing page gets it
+   from .section; this band had none, so both sat against its edges. */
+.tp-cta {
+  padding-block: clamp(4.5rem, 11vw, 8.5rem);
+}
+
+.tp-cta .display em {
+  font-style: italic;
+  color: var(--champagne-soft);
+}
+
+.tp-cta .display {
+  max-width: 20ch;
+}
+
+.tp-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-3);
+  margin-top: var(--s-8);
+}
+
+/* Four cards: on the three-column tablet grid the fourth would sit alone. */
+@media (max-width: 1100px) and (min-width: 761px) {
+  .tp-more__grid > :nth-child(4) {
+    display: none;
+  }
+}
+
+/* ---- The dock: her WhatsApp, following a phone down the page ---------------------------- */
+
+.tp-dock {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .tp-dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: block;
+    padding: var(--s-3) 16px calc(var(--s-3) + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--bone) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+  }
+
+  .tp-dock .btn {
+    width: 100%;
+  }
+
+  .tp-dock.is-waiting {
+    transform: translateY(110%);
+    transition: transform var(--dur) var(--ease-out);
+  }
+
+  .tp-dock.is-waiting.is-shown {
+    transform: none;
+  }
+
+  /* One or two photographs still sit two to a row on a phone. */
+  .tp-masonry--few {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---- Narrower screens -------------------------------------------------------------- */
+
+@media (max-width: 960px) {
+  .tp-hero__grid,
+  .tp-about__grid,
+  .tp-reviews__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tp-collage {
+    height: clamp(280px, 60vw, 440px);
+  }
+
+  .tp-score {
+    position: static;
+  }
+}
+
+@media (max-width: 760px) {
+  .tp-hero {
+    padding-top: calc(78px + 2rem);
+  }
+
+  .tp-collage::before {
+    inset: 14px -8px -8px 14px;
+  }
+
+  /* Two facts to a row on a phone, ruled like a table. */
+  .tp-facts__row {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tp-facts__row > div + div {
+    border-left: 0;
+  }
+
+  .tp-facts__row > div:nth-child(even) {
+    border-left: 1px solid var(--line);
+  }
+
+  .tp-facts__row > div:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
+  /* An odd one out spans the row rather than leaving a blank cell. */
+  .tp-facts__row > div:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+
+  .tp-masonry {
+    columns: 2;
+  }
+
+  .tp-review-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tp-cta__actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .tp-hero__actions .btn {
+    flex: 1 1 100%;
+  }
+
+  .tp-share {
+    margin-inline: auto;
+  }
+
+  .tp-score__number {
+    font-size: 4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-collage__item img,
+  .tp-piece img,
+  .tp-steps li {
+    transition: none;
+  }
+
+  .tp-collage__item:hover img,
+  .tp-piece:hover img,
+  .tp-steps li:hover {
+    transform: none;
+  }
+}

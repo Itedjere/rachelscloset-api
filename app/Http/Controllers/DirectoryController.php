@@ -150,11 +150,56 @@ class DirectoryController extends Controller
             ->take(20)
             ->get();
 
+        /*
+         * The breakdown is over EVERY published review, not the twenty shown:
+         * "5 stars: 41" beside a list of twenty would otherwise disagree with
+         * itself, and the summary is the part most people read.
+         */
+        $ratingCounts = Review::query()
+            ->published()
+            ->where('subject_id', $tailor->id)
+            ->where('direction', Review::CUSTOMER_TO_TAILOR)
+            ->selectRaw('rating, count(*) as total')
+            ->groupBy('rating')
+            ->pluck('total', 'rating');
+
+        /*
+         * Somewhere to go next. A visitor who scanned her card and finds she is
+         * busy, or not quite right, should not hit a dead end -- the next
+         * tailor in her state is the most useful thing on the page for them.
+         * Through the ranking, so the same gate applies; the whole house when
+         * her state has nobody else.
+         */
+        $nearby = collect($this->ranking->search($profile->state, null, 5)->items())
+            ->reject(fn (TailorProfile $other) => $other->is($profile));
+
+        if ($nearby->isEmpty() && $profile->state) {
+            $nearby = collect($this->ranking->search(null, null, 5)->items())
+                ->reject(fn (TailorProfile $other) => $other->is($profile));
+        }
+
+        $nearby = $nearby->take(4)->values();
+
+        $nearbyCovers = PortfolioItem::query()
+            ->visible()
+            ->whereIn('tailor_id', $nearby->pluck('user_id'))
+            ->orderBy('position')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('tailor_id');
+
         return view('public.tailor', [
             'profile' => $profile,
             'tailor' => $tailor,
             'gallery' => $gallery,
             'reviews' => $reviews,
+            'reviewTotal' => (int) $ratingCounts->sum(),
+            'ratingCounts' => $ratingCounts,
+            // A count, never the orders -- the same fact the directory card shows.
+            'live' => $profile->liveOrders()->count(),
+            'nearby' => $nearby,
+            'nearbyCovers' => $nearbyCovers,
+            'nearbyIsLocal' => $nearby->isNotEmpty() && $nearby->every(fn ($o) => $o->state === $profile->state),
         ]);
     }
 

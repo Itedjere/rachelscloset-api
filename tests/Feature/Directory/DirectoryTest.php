@@ -383,4 +383,88 @@ class DirectoryTest extends TestCase
         $this->assertSame(['tailors' => 2, 'states' => 2, 'in_the_making' => 1], $response->viewData('house'));
         $this->assertSame(['Kano' => 1, 'Lagos' => 1], $response->viewData('byState')->sortKeys()->all());
     }
+
+    /* =====================================================================
+       Her page
+       ===================================================================== */
+
+    public function test_her_page_says_what_is_on_her_table(): void
+    {
+        $busy = $this->tailor('Busy Bee Couture', 'Lagos');
+        $this->liveOrder($busy);
+        $this->liveOrder($busy, Order::READY);
+        $this->liveOrder($busy, Order::COLLECTED);
+
+        $this->get('/t/'.$busy->tailorProfile->slug)
+            ->assertOk()
+            ->assertSee('2 garments in the making right now');
+
+        $quiet = $this->tailor('Quiet Corner', 'Lagos');
+
+        $this->get('/t/'.$quiet->tailorProfile->slug)
+            ->assertOk()
+            ->assertSee('Taking new work');
+    }
+
+    /** The bars count every published review, not just the twenty listed. */
+    public function test_the_rating_breakdown_counts_every_review(): void
+    {
+        $tailor = $this->tailor('Well Reviewed', 'Lagos');
+        $this->rate($tailor, 21, 5);
+        $this->rate($tailor, 2, 3);
+
+        $response = $this->get('/t/'.$tailor->tailorProfile->slug)->assertOk();
+
+        $this->assertSame(23, $response->viewData('reviewTotal'));
+        $this->assertSame(21, (int) $response->viewData('ratingCounts')[5]);
+        $this->assertSame(2, (int) $response->viewData('ratingCounts')[3]);
+        $this->assertCount(20, $response->viewData('reviews'));
+    }
+
+    /** A customer is named by first name and initial on a public page. */
+    public function test_a_reviewer_is_named_by_first_name_and_initial(): void
+    {
+        $tailor = $this->tailor('Reviewed House', 'Lagos');
+        $this->rate($tailor, 1, 5);
+
+        $review = Review::query()->first();
+        $review->author->forceFill(['name' => 'Chiamaka Okonkwo'])->save();
+        $review->forceFill(['body' => 'Lovely work.'])->save();
+
+        $this->get('/t/'.$tailor->tailorProfile->slug)
+            ->assertOk()
+            ->assertSee('Chiamaka O.')
+            ->assertDontSee('Okonkwo');
+    }
+
+    /** Somewhere to go next: other listed tailors in her state, never herself. */
+    public function test_her_page_suggests_other_tailors_in_her_state(): void
+    {
+        $her = $this->tailor('Her Own House', 'Kano');
+        $this->tailor('Kano Neighbour', 'Kano');
+        $this->tailor('Far Away', 'Lagos');
+
+        $lapsed = $this->tailor('Lapsed Kano', 'Kano');
+        Subscription::forTailor($lapsed)->forceFill([
+            'current_period_end' => now()->subDays(60),
+            'grace_ends_at' => now()->subDays(50),
+        ])->save();
+
+        $response = $this->get('/t/'.$her->tailorProfile->slug)->assertOk();
+
+        $this->assertSame(['Kano Neighbour'], $response->viewData('nearby')->pluck('business_name')->all());
+        $response->assertSee('More tailors in Kano');
+    }
+
+    /** Alone in her state: the rest of the house rather than nothing. */
+    public function test_alone_in_her_state_she_is_shown_beside_the_house(): void
+    {
+        $her = $this->tailor('Only In Ekiti', 'Ekiti');
+        $this->tailor('Lagos House', 'Lagos');
+
+        $response = $this->get('/t/'.$her->tailorProfile->slug)->assertOk();
+
+        $this->assertSame(['Lagos House'], $response->viewData('nearby')->pluck('business_name')->all());
+        $response->assertSee('More tailors to see');
+    }
 }
