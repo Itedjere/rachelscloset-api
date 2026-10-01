@@ -262,7 +262,7 @@ class BuildBrandAssets extends Command
         $bone = $this->rgb($im, self::BONE);
         $champagne = $this->rgb($im, self::CHAMPAGNE);
 
-        imagettftext($im, 62, 0, 96, 372, $bone, $this->font, "Rachel\u{2019}s Closet");
+        imagettftext($im, 62, 0, 96, 372, $bone, $this->font, 'Rachels Closet');
         imagettftext($im, 27, 0, 99, 430, $champagne, $this->font, 'Watch your clothes being made');
 
         $this->roundLine($im, 99, 476, 232, 476, 4, $champagne);
@@ -275,7 +275,7 @@ class BuildBrandAssets extends Command
     {
         $markSize = 120;
         $gap = 28;
-        $text = "Rachel\u{2019}s Closet";
+        $text = 'Rachels Closet';
         $fontSize = 58;
 
         $box = imagettfbbox($fontSize, 0, $this->font, $text);

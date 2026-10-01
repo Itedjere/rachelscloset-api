@@ -114,7 +114,7 @@ class SubscriptionController extends Controller
             $link = $this->gateways->active()->initialise(
                 $payment->load('payer'),
                 rtrim((string) config('app.frontend_url'), '/').'/subscription/paid',
-                ucfirst($validated['plan']).' listing on Rachel\'s Closet — '.$plan['days'].' days',
+                ucfirst($validated['plan']).' listing on Rachels Closet — '.$plan['days'].' days',
             );
         } catch (RuntimeException $exception) {
             // The row stays, marked failed, so the attempt is visible when

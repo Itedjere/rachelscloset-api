@@ -78,7 +78,7 @@ class DisputeController extends Controller
         abort_unless(
             $order->isEscrow(),
             422,
-            'This order was paid straight to the tailor. Rachel\'s Closet holds no money on it to settle.',
+            'This order was paid straight to the tailor. Rachels Closet holds no money on it to settle.',
         );
 
         $validated = $request->validate([

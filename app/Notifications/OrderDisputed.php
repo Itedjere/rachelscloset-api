@@ -38,7 +38,7 @@ class OrderDisputed extends ClosetNotification
     public function payload(object $notifiable): array
     {
         return [
-            'message' => "Rachel's Closet is looking into order ".$this->order->reference
+            'message' => 'Rachels Closet is looking into order '.$this->order->reference
                 .' and will call you. Your money for it stays put until then.',
             'order_id' => $this->order->id,
             'reference' => $this->order->reference,

@@ -17,7 +17,7 @@ class NotificationFactory extends Factory
             'user_id' => User::factory(),
             'type' => 'step_completed',
             'payload' => [
-                'title' => "Rachel's Closet",
+                'title' => 'Rachels Closet',
                 'message' => 'Your blouse has moved on a stage.',
                 'url' => '/orders/1',
             ],

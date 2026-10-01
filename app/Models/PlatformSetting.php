@@ -140,7 +140,7 @@ class PlatformSetting extends Model
      * The number a locked-out person rings.
      *
      * The ONLY way back in after a forgotten PIN starts with a phone call to
-     * Rachel's Closet -- nothing here sends an SMS or an email, and a reset is
+     * Rachels Closet -- nothing here sends an SMS or an email, and a reset is
      * admin-issued on purpose -- so this number is the whole of the "forgot
      * PIN" flow as far as she can see. A setting rather than a constant
      * because it is a real phone in somebody's hand: a changed SIM must not

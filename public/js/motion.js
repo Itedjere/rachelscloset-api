@@ -1,5 +1,5 @@
 /*
- * Rachel's Closet — motion.
+ * Rachels Closet — motion.
  * ============================================================================
  *
  * Everything the reference template spends 1.12MB of libraries on, in one file

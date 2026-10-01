@@ -240,7 +240,7 @@ class ClaimController extends Controller
 
     private function whatsappLink(User $customer, string $link): string
     {
-        $message = "Hello {$customer->name}, here is your Rachel's Closet account. "
+        $message = "Hello {$customer->name}, here is your Rachels Closet account. "
             ."Open this to finish setting it up: {$link}";
 
         return WhatsApp::share($message);

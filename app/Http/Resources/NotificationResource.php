@@ -14,7 +14,7 @@ class NotificationResource extends JsonResource
         return [
             'id' => $this->id,
             'type' => $this->type,
-            'title' => $payload['title'] ?? "Rachel's Closet",
+            'title' => $payload['title'] ?? 'Rachels Closet',
             'message' => $payload['message'] ?? '',
             // Where tapping it should land, as a path in the React app.
             'url' => $payload['url'] ?? null,

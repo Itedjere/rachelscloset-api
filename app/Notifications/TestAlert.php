@@ -26,7 +26,7 @@ class TestAlert extends ClosetNotification
 
     public function subject(object $notifiable): string
     {
-        return "Rachel's Closet";
+        return 'Rachels Closet';
     }
 
     public function payload(object $notifiable): array

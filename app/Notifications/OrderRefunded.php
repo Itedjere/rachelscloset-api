@@ -25,7 +25,7 @@ class OrderRefunded extends ClosetNotification
 
     public function payload(object $notifiable): array
     {
-        $message = "Rachel's Closet has sent back ".number_format((float) $this->amount, 2)
+        $message = 'Rachels Closet has sent back '.number_format((float) $this->amount, 2)
             .' naira on order '.$this->order->reference.'.';
 
         return [

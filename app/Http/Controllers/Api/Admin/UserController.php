@@ -177,7 +177,7 @@ class UserController extends Controller
              */
             'whatsapp_url' => WhatsApp::to(
                 $user->phone,
-                "Hello {$user->name}, here is your way back into Rachel's Closet: {$link}",
+                "Hello {$user->name}, here is your way back into Rachels Closet: {$link}",
             ),
             'expires_at' => $issued['token']->expires_at,
             'expires_in_hours' => ClaimToken::RESET_LIFETIME_HOURS,

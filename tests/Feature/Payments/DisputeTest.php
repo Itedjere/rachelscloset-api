@@ -351,7 +351,7 @@ class DisputeTest extends TestCase
     }
 
     /**
-     * A direct order was paid to the tailor herself, so Rachel's Closet
+     * A direct order was paid to the tailor herself, so Rachels Closet
      * holds nothing to freeze, refund or release -- and offering the button
      * would promise exactly that. Before this, a direct order had no payout
      * row, the "already paid out?" check always said no, and it showed.

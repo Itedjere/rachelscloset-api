@@ -61,7 +61,7 @@ class FlutterwaveTransfers implements TransferGateway
             'amount' => (float) $payout->net_amount,
             'currency' => 'NGN',
             'reference' => $reference,
-            'narration' => "Rachel's Closet order ".$payout->order->reference,
+            'narration' => 'Rachels Closet order '.$payout->order->reference,
         ]);
 
         if (! $response->successful() || $response->json('status') !== 'success') {

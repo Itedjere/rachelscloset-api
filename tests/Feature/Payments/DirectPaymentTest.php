@@ -188,7 +188,7 @@ class DirectPaymentTest extends TestCase
             ->assertJsonPath('data.paid_total', '20000.00');
     }
 
-    /** Rachel's Closet cannot give back money it never received. */
+    /** Rachels Closet cannot give back money it never received. */
     public function test_a_direct_order_cannot_be_refunded(): void
     {
         Sanctum::actingAs($this->tailor);

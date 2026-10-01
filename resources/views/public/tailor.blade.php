@@ -1,6 +1,6 @@
 @extends('public.layout')
 
-@section('title', $profile->business_name . " — Rachel's Closet")
+@section('title', $profile->business_name . " — Rachels Closet")
 @section('description', Str::limit($profile->bio ?: "See work by {$profile->business_name}"
     . ($profile->state ? " in {$profile->state}" : '')
     . ', read reviews, and follow every stage of your garment.', 155))

@@ -75,7 +75,7 @@ return [
         ['quote' => 'I stopped answering the same question forty times a week. They can see it for themselves now.', 'name' => 'Blessing O.', 'role' => 'Tailor', 'where' => 'Enugu', 'rating' => 5],
         ['quote' => 'My aso-ebi was ready three days before the wedding. I knew because my phone told me, not because I went there.', 'name' => 'Amaka N.', 'role' => 'Customer', 'where' => 'Lagos', 'rating' => 5],
         ['quote' => 'I photograph the measurement book and it is saved. I no longer ask a customer to come back just to be measured again.', 'name' => 'Ibrahim S.', 'role' => 'Tailor', 'where' => 'Kano', 'rating' => 5],
-        ['quote' => 'I paid half and the rest stayed with Rachel&rsquo;s Closet until I collected. That is the part that made me try it.', 'name' => 'Chioma E.', 'role' => 'Customer', 'where' => 'Port Harcourt', 'rating' => 4],
+        ['quote' => 'I paid half and the rest stayed with Rachels Closet until I collected. That is the part that made me try it.', 'name' => 'Chioma E.', 'role' => 'Customer', 'where' => 'Port Harcourt', 'rating' => 4],
         ['quote' => 'Customers used to arrive on the wrong day and meet nothing ready. That does not happen any more.', 'name' => 'Taiwo A.', 'role' => 'Tailor', 'where' => 'Ibadan', 'rating' => 5],
     ],
 

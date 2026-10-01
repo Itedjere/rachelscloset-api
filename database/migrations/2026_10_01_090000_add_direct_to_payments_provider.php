@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
  * A second payment "provider": the customer's own hand.
  *
  * On a direct order the customer pays the tailor herself -- cash, a bank
- * transfer, a POS -- and nothing passes through Rachel's Closet. Until now the
+ * transfer, a POS -- and nothing passes through Rachels Closet. Until now the
  * only way such an order could leave pending_payment was the Pay button, which
  * charged the customer through Flutterwave INTO THE PLATFORM'S ACCOUNT and
  * recorded no payout, because a direct order has none. The tailor was never

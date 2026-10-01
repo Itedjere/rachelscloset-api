@@ -179,7 +179,7 @@ class CustomerController extends Controller
 
         if ($user && ! $user->isCustomer()) {
             throw ValidationException::withMessages([
-                'phone' => 'That number is already on Rachel\'s Closet, but not as a customer.',
+                'phone' => 'That number is already on Rachels Closet, but not as a customer.',
             ]);
         }
 

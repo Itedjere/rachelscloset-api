@@ -43,7 +43,7 @@ class FlutterwaveGateway implements PaymentGateway
                 'phonenumber' => $payer->phone,
             ],
             'customizations' => [
-                'title' => "Rachel's Closet",
+                'title' => 'Rachels Closet',
                 'description' => $description,
             ],
             'meta' => [

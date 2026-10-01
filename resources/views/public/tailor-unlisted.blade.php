@@ -1,9 +1,9 @@
 @extends('public.layout')
 
-@section('title', $profile->business_name . " — Rachel's Closet")
+@section('title', $profile->business_name . " — Rachels Closet")
 {{-- Deliberately not indexed: she is not listed, and a search engine should
      not start ranking a page that says so. --}}
-@section('description', 'This tailor is not currently listed on Rachel\'s Closet.')
+@section('description', 'This tailor is not currently listed on Rachels Closet.')
 
 @section('noindex', true)
 

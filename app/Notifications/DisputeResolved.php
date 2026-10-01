@@ -34,8 +34,8 @@ class DisputeResolved extends ClosetNotification
     {
         $message = match ($this->dispute->outcome) {
             Dispute::REFUNDED => $this->dispute->refunded_amount
-                ? "Rachel's Closet has sent money back to the customer."
-                : "Rachel's Closet has sent your money back to you.",
+                ? 'Rachels Closet has sent money back to the customer.'
+                : 'Rachels Closet has sent your money back to you.',
             Dispute::RELEASED => 'The money has gone to the tailor.',
             default => 'Nothing needed to change, so the order carries on as normal.',
         };

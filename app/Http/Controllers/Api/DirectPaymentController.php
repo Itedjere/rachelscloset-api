@@ -122,7 +122,7 @@ class DirectPaymentController extends Controller
         abort_unless($order->involves($request->user()), 404);
         abort_unless($order->tailor_id === $request->user()->id, 403, 'Only the tailor can record this.');
 
-        abort_if($order->isEscrow(), 422, 'This order is paid through Rachel\'s Closet, not to you directly.');
+        abort_if($order->isEscrow(), 422, 'This order is paid through Rachels Closet, not to you directly.');
         abort_if($order->status === Order::CANCELLED, 422, 'This order was cancelled.');
     }
 

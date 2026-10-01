@@ -89,11 +89,11 @@ abstract class ClosetNotification extends Notification
 
         if ($url) {
             $mail->action(
-                $payload['action'] ?? "Open Rachel's Closet",
+                $payload['action'] ?? 'Open Rachels Closet',
                 rtrim((string) config('app.frontend_url'), '/').$url,
             );
         }
 
-        return $mail->salutation("— Rachel's Closet");
+        return $mail->salutation('— Rachels Closet');
     }
 }

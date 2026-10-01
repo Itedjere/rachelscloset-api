@@ -22,7 +22,7 @@ class PayoutReleased extends ClosetNotification
     public function payload(object $notifiable): array
     {
         return [
-            'message' => "Rachel's Closet has sent you the money for order "
+            'message' => 'Rachels Closet has sent you the money for order '
                 .$this->payout->order->reference.'. It should reach your bank shortly.',
             'order_id' => $this->payout->order_id,
             'amount' => (string) $this->payout->net_amount,
