@@ -1815,6 +1815,16 @@ Seeded accounts, all with PIN **482917**:
 | Tailor (Mama Ngozi Couture) | 08030000002 |
 | Customer (no email, on purpose) | 08030000003 |
 
+**These accounts exist only in `local`.** Their PIN is written right here, so
+on a live server they would be an admin anybody could sign into.
+`DatabaseSeeder` stops after the settings and the stage library in every
+other environment (tested). **The live admin is made with
+`php artisan admin:create`**, run by a person in a terminal: name and phone
+as prompts or options, the PIN only ever typed hidden, twice, and checked by
+`App\Rules\Pin`. It refuses a number that already has an account rather than
+promoting it, and refuses to run without a terminal, so a PIN can never end
+up in shell history or a transcript.
+
 Tests run against the **`rachelscloset_test`** MySQL database, not SQLite — the
 schema uses MySQL enums and there is no SQLite driver on this machine.
 
@@ -1830,3 +1840,54 @@ npx oxlint src
 **This machine kills dev servers for memory.** It is HP Sure Click
 (`Br-uxendm.exe`) holding about 2.4GB, not anything in this project. Check what
 is actually holding memory before blaming the build.
+
+---
+
+## 9. Deployment — cPanel shared hosting
+
+Both repos are on GitHub (private), branch `main`:
+`Itedjere/rachelscloset-api` and `Itedjere/rachelscloset-web`.
+
+**Two addresses.** `rachelscloset.com.ng` is Laravel: the API and the public
+Blade site, with the domain's document root set to `rachelscloset-api/public`
+so nothing outside `public/` (above all `.env`) is reachable. The app is
+static files at `app.rachelscloset.com.ng`, built on a developer's machine —
+shared hosting has no Node.
+
+**First install, once, by hand** (over SSH, in `~/rachelscloset-api`):
+`composer install --no-dev --optimize-autoloader`, a production `.env`
+(`APP_ENV=production`, `APP_DEBUG=false`, `FRONTEND_URL` = the app address,
+`QUEUE_CONNECTION=sync`, `FLUTTERWAVE_SANDBOX=false` and live keys),
+`key:generate`, `migrate --force`, then **only**
+`db:seed --class=PlatformSettingSeeder` and `--class=StepLibrarySeeder`, then
+`push:vapid` and `php artisan admin:create`. A cron every minute runs
+`artisan schedule:run` with the host's PHP 8.3 binary; the admin dashboard's
+health panel shows whether it is alive.
+
+**Every update after that:**
+
+- API: `./deploy.sh` on the server. It refuses unless `APP_ENV=production`
+  and the checkout is clean, goes into maintenance mode, fast-forwards, runs
+  Composer and migrations, rebuilds the caches, and comes back up. **If any
+  step fails the site stays down on purpose** — half-new code against a
+  half-migrated database is worse than a maintenance page. It never seeds.
+- App: `./deploy.sh` here, in Git Bash. It refuses uncommitted changes,
+  typechecks, builds, checks the production address made it into the
+  bundle, and uploads over SSH with `tar` — the new hashed assets first and
+  `index.html` last, so a page loading mid-upload never names a script that
+  is not there yet. Old assets stay, for a phone still on the last version.
+  Target in an untracked `.deploy.env` (`DEPLOY_HOST`, `DEPLOY_PORT`,
+  `DEPLOY_DIR`).
+
+**`.env.production` in the web repo is committed on purpose**: it holds only
+the two public addresses, which Vite writes into the public JavaScript
+anyway. A build that fell back to dev defaults would ship an app talking to
+localhost.
+
+**`.htaccess`, both sides.** The API's forces https and passes the
+`Authorization` header through — load-bearing, because shared-hosting Apache
+often drops it and every bearer-token request then reads as signed out. The
+app's (`public/.htaccess`, copied into `dist/`) forces https, sends every
+non-file address to `index.html` so a refresh on `/orders/12` is not a 404,
+serves the manifest with its real type, and never caches `index.html` or
+`sw.js` — a cached copy of either keeps a phone on the old app.

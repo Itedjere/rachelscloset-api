@@ -5,7 +5,16 @@
 
     RewriteEngine On
 
-    # Handle Authorization Header
+    # Always https on the live server. Web push, the service worker and the
+    # payment return all refuse to work over plain http. Never for localhost,
+    # where there is no certificate.
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Handle Authorization Header. Load-bearing here: every signed-in request
+    # is a bearer token, and shared-hosting Apache often drops this header
+    # before PHP sees it -- which reads as "signed out" on every page.
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
