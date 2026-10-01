@@ -65,7 +65,16 @@ class DisputeController extends Controller
     {
         abort_if($order->hasOpenDispute(), 422, 'This order already has an open dispute.');
 
-        // Same rule as the customer's button: no held money, nothing to settle.
+        // Same rule as the customer's button: once the order is finished --
+        // she said she was happy, or the waiting period ran out -- it is
+        // between the two of them.
+        abort_if(
+            $order->status === Order::COMPLETED,
+            422,
+            'This order is finished. The customer has already signed it off, so it is between her and the tailor.',
+        );
+
+        // Same rule again: no held money, nothing to settle.
         abort_unless(
             $order->isEscrow(),
             422,

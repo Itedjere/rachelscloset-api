@@ -121,11 +121,21 @@ class DisputeController extends Controller
         }
 
         /*
-         * Not before she has it. A garment still being made is a
-         * conversation with the tailor, and the tracker is what that
-         * conversation is for.
+         * Only while it is COLLECTED: she has the garment, and the order is
+         * not yet finished.
+         *
+         * Not before -- a garment still being made is a conversation with the
+         * tailor, and the tracker is what that conversation is for.
+         *
+         * And not after it is completed, however it got there: she said she
+         * was happy, the waiting period ran out and the tailor took her money,
+         * or an earlier dispute was settled. "Yes, I am happy" releases the
+         * money, and a complaint after that is between the two of them. This
+         * used to allow `completed` too, so when the release was still pending
+         * -- a tailor with no bank details yet -- the button came straight
+         * back on an order she had just signed off.
          */
-        if (! in_array($order->status, [Order::COLLECTED, Order::COMPLETED], true)) {
+        if ($order->status !== Order::COLLECTED) {
             return false;
         }
 

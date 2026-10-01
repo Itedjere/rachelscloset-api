@@ -386,6 +386,46 @@ class DisputeTest extends TestCase
         $this->assertSame(0, Dispute::query()->count());
     }
 
+    /**
+     * "Yes, I am happy" ends it. The gap this closed: confirming completes
+     * the order, but when the release is still pending -- here, a tailor
+     * with no bank details yet -- the "already paid out?" check said no and
+     * the dispute button came straight back.
+     */
+    public function test_once_she_says_she_is_happy_she_cannot_dispute(): void
+    {
+        $this->tailor->tailorProfile->forceFill([
+            'bank_code' => null,
+            'bank_account_number' => null,
+            'bank_account_name' => null,
+            'transfer_recipient' => null,
+        ])->save();
+
+        $order = $this->sentOrder();
+        $order->forceFill(['received_at' => now()])->save();
+
+        Sanctum::actingAs($this->customer);
+
+        $this->getJson("/api/orders/{$order->id}/dispute")->assertJsonPath('can_raise', true);
+
+        $this->postJson("/api/orders/{$order->id}/confirm")->assertOk();
+
+        $order->refresh();
+        $this->assertSame(Order::COMPLETED, $order->status);
+        $this->assertFalse($order->payout->isReleased(), 'the pending release is the case that used to leak');
+
+        $this->getJson("/api/orders/{$order->id}/dispute")->assertJsonPath('can_raise', false);
+        $this->postJson("/api/orders/{$order->id}/dispute", ['reason' => 'Actually the hem is wrong.'])
+            ->assertStatus(422);
+
+        // Nor on her behalf.
+        Sanctum::actingAs($this->admin);
+        $this->postJson("/api/admin/orders/{$order->id}/dispute", ['reason' => 'She rang after all.'])
+            ->assertStatus(422);
+
+        $this->assertSame(0, Dispute::query()->count());
+    }
+
     /** The same order held in escrow still can be -- the rule is the money, not the order. */
     public function test_an_escrow_order_still_can_be_disputed(): void
     {
