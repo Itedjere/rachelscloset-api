@@ -1,6 +1,6 @@
-# CLAUDE.md — Rachel's Closet
+# CLAUDE.md — Rachels Closet
 
-The single source of truth for building Rachel's Closet. Read it fully before
+The single source of truth for building Rachels Closet. Read it fully before
 writing code. The approved design notes live at
 `C:\Users\itedj\.claude\plans\drifting-napping-hickey.md`; this file records what
 is actually true of the code, and is kept current as sections land.
@@ -11,9 +11,9 @@ is actually true of the code, and is kept current as sections land.
 
 ---
 
-## 1. What Rachel's Closet is
+## 1. What Rachels Closet is
 
-**Rachel's Closet Fashion House** (`rachelscloset.com.ng`) connects tailors with
+**Rachels Closet Fashion House** (`rachelscloset.com.ng`) connects tailors with
 customers in Nigeria.
 
 **The problem is opacity, not payment.** A customer hands over cloth and money
@@ -80,7 +80,7 @@ Do not relitigate these without asking.
 | **The platform absorbs the Flutterwave charge** on escrow | The subscription is the revenue. Charging twice pushes tailors off-platform |
 | **Arrows always; drag only beside them, from a grip** | Touch DnD fights page scroll on a 5-inch screen, and "press and hold" has no affordance a non-reader can decode. So a drag starts only on a visible grip, the only element with `touch-action: none`, and every draggable list keeps up/down arrows that need no gesture. See `useReorder` |
 | **Photo-proof gate applies only to 4- and 5-star reviews** | It exists to stop rating inflation. A complaint held in moderation reads as censorship |
-| **Rachel's Closet is the operator only** | It does not trade in the directory |
+| **Rachels Closet is the operator only** | It does not trade in the directory |
 
 ### Onboarding without email or SMS
 
@@ -467,7 +467,7 @@ PIN, and two things made that route unusable:
   cannot get in. It is the first non-numeric row on the admin Settings screen
   (`phone: true`), validated as a Nigerian number and stored normalised. It is
   in the public `/api/config`, because the only person who needs it cannot
-  sign in; unset is `null` and the page falls back to "contact Rachel's
+  sign in; unset is `null` and the page falls back to "contact Rachels
   Closet" rather than showing an empty button.
 - **The reset page got the claim page's two-step split**, with `/reset/check`
   sharing a named `reset` limiter (6/min, tighter than claim's 8, because the
@@ -657,7 +657,7 @@ gains `direct`, `App\Support\Naira`. 12 new tests, 466 total.
 to your tailor") could only leave `pending_payment` through the Pay button,
 which charged the customer through Flutterwave **into the platform's
 account** — and `ConfirmPayment` records no payout for a direct order. So the
-money sat with Rachel's Closet, nothing said it was owed, the tailor was never
+money sat with Rachels Closet, nothing said it was owed, the tailor was never
 paid, and the screen told both of them it had gone straight to her. Found in
 local test data: three direct orders paid that way. A cash payment, meanwhile,
 had no way in at all, so the order could never start.
@@ -821,9 +821,9 @@ thing that happens is somebody telephoning her.
   to every road into `completed` — her confirmation, the tailor's release
   after the waiting period, an admin's settlement — and to an admin opening
   one on her behalf. The order page re-asks on every status change.
-- **Only on an order whose money Rachel's Closet holds.** A direct order was
+- **Only on an order whose money Rachels Closet holds.** A direct order was
   paid to the tailor herself, so there is nothing to freeze, refund or
-  release, and the card's promise ("the money stays with Rachel's Closet")
+  release, and the card's promise ("the money stays with Rachels Closet")
   would be false. This was missed at first: a direct order has no payout row,
   so the "already paid out?" check always said no and the button showed.
   Refused for the customer and for an admin opening one on her behalf.
@@ -1057,7 +1057,7 @@ must never die. 9 new tests, 299 total.
   print shop on WhatsApp; home printing is not how this works. Printing uses
   a `@media print` block and the browser's own "Save as PDF" — no PDF
   library, which would be tens of megabytes for worse typography.
-- **The card carries the platform.** Without "Rachel's Closet" on it the card
+- **The card carries the platform.** Without "Rachels Closet" on it the card
   shows a web address with no indication of what it is, and asks somebody to
   trust an unexplained square.
 
@@ -1525,10 +1525,78 @@ the effect to a child with no descendants to trap. Anything else fixed inside
 that header depends on it staying there. `transform`, `filter`, `perspective`
 and `will-change` of those do the same thing.
 
-**Not built yet, and deliberately:** the tailor directory and profile pages are
-Section 15, so the landing page's tailors are illustrative and labelled as such
-on the page. The tracker shown under "How it works" is a static mock of what
-Section 9 builds.
+**The public site's way into the app, and its real tailors (added later).**
+The landing page used to have no door: every "Join" led back to its own
+section, there was no "Sign in", and the app had no sign-up page at all.
+
+- **`/join` in the app** — she chooses "I sew" or "I want clothes made" first,
+  then sees only the fields that choice needs; `?as=tailor` arrives from the
+  public site. Signed in on success. "Sign in" is a pill in the public header,
+  and "Join the house" opens `/join?as=tailor`. Public pages get the app's
+  address as `$appUrl` (a view composer in `AppServiceProvider`).
+- **A tailor's state is required and must be one of `NigerianStates::ALL`**,
+  the list the directory filters on and `/api/config` serves to the form.
+  Free text left "lagos" or "Lagos State" invisible to a Lagos search.
+- **The landing page shows the top of the real directory** (`HomeController`
+  through `TailorRanking`, so the same subscription and suspension gate), each
+  card linking to her page; with nobody listed it invites tailors instead. All
+  "Find a tailor" links go to `/tailors`.
+
+- **"How it works" shows the new tracker** (ring, "Now", the line of stage
+  cards) as a static picture, so the page promises what the app shows.
+- **The footer has a way to reach a person**: the help line from Settings,
+  tap to call or WhatsApp, via a view composer on `public.layout`. "Design
+  language" is out of the footer; `/styleguide` is `noindex` and disallowed
+  in robots.txt.
+- **`/privacy` and `/terms` are DRAFTS**, written from what the code does and
+  marked "This is a draft" on the page until a lawyer has read them. Every
+  number in them (days before a tailor is paid, collection deadline, grace,
+  review threshold, notification retention) comes from `platform_settings`
+  through `LegalController`, so changing a setting changes the terms; a test
+  pins that. Their "Last updated" date is fixed by hand. If the platform's
+  behaviour changes, these pages change in the same commit.
+
+**Still placeholder, and deliberately left so:** the photography (Pexels) and
+the testimonials. Quotes written for the page would be presented as somebody's
+words, so the illustrative ones stay labelled as such, and the notice at the
+foot of the landing page stays until real ones replace them.
+
+### The Fashion House, redesigned
+
+`/tailors` is a designer index now, not a form above a grid: a dark masthead
+with the house's name set large and a live line ("51 tailors · 24 states ·
+100 garments in the making right now"), a frosted search bar in the band,
+state chips with counts that stick while the grid scrolls, and tall photo
+cards with the name laid over the photograph. The top tailor on an unfiltered
+first page takes a 2×2 feature tile.
+
+- **The live dot.** Each card says how many garments are on her table:
+  `TailorProfile::liveOrders()` — `in_progress` and `ready`, not
+  `pending_payment` (no work bought yet) and not `collected` (out of her
+  hands). A count, never the orders. When she is sewing, a bright dot breathes
+  and sends out two rings half a beat apart, like ripples on water; when she is
+  free, a still pale dot and "Taking new work". Motion, colour and words all
+  carry it; reduced motion stills it. On a small phone the pill shows only the
+  number, and the legend above the grid explains the dots.
+- **`TailorRanking::listed()`** is the one gated population (active, listed by
+  subscription). The search, the masthead totals and the state chips all count
+  over it, so the page never advertises a tailor or an order a visitor cannot
+  find. Tested with a lapsed tailor who has live orders.
+- **24 per page**, divisible by the 4, 3 and 2 columns. The feature tile takes
+  four cells, so the first page ends with a "Your shop could be here" tile
+  that squares it to seven full rows (and to the tablet and phone grids too).
+  Measured, not assumed.
+- Two layout traps found on the way, both phone-only: in the stacked search a
+  field's `flex-basis` became a 220px HEIGHT; and the live pill collided with
+  the rating badge on a 160px card.
+
+**`DemoFashionHouseSeeder` — 50 invented tailors, LOCAL ONLY.** It refuses to
+run outside `local`, is not called by `DatabaseSeeder`, and is run on purpose:
+`php artisan db:seed --class=DemoFashionHouseSeeder`. Every account's phone
+starts `0809 9`. Covers are the landing page's Pexels photographs downloaded
+into `portfolio/demo-*.jpg`; every eighth tailor has none (the monogram);
+about a third have nothing live (the pale dot); about 60% have reviews. It
+exists to see the page full. It must never be run against a live database.
 
 ### Section 3 — done
 
@@ -1650,6 +1718,17 @@ no keys. It only takes effect in `local` — see `PaymentGatewayManager`. Set it
 **`FRONTEND_URL` must match the port Vite actually took.** It is the return URL
 a payer comes back to. Something already holds 5174 on this machine, so Vite
 falls back to 5175 and `.env` is set to match; if that changes, this changes.
+
+**`VITE_SITE_URL` is the other direction**: the public site, which the logo
+on the signed-out pages (sign-in, join, claim, reset, forgot) leads back to.
+Signed out, the app's `/` only bounces to sign-in, so linking the logo there
+went nowhere. Dev falls back to `http://localhost:8001`; **set it in
+production** or the logo points at the app's own root.
+
+**The name is "Rachels Closet", no apostrophe**, everywhere it is the
+business — copy, brand assets (`brand:build` re-renders them), tests.
+"Rachel's" survives only where it means the person, e.g. "Rachel's own work"
+in `config/gallery.php`.
 
 **Web push, locally.** Keys are already in `.env`. Regenerating them silently
 breaks every device already subscribed, which is why `push:vapid` refuses to
