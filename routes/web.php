@@ -3,6 +3,7 @@
 use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PortfolioPhotoController;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +68,14 @@ Route::get('/photo/{path}', PortfolioPhotoController::class)
 */
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
 Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
+
+/*
+| Who we are, and how to reach a person. The contact page leads with the help
+| line from Settings, because nothing here sends email and most of the people
+| who need it would rather ring.
+*/
+Route::get('/about', [PagesController::class, 'about'])->name('about');
+Route::get('/contact', [PagesController::class, 'contact'])->name('contact');
 
 Route::get('/sitemap.xml', [DirectoryController::class, 'sitemap'])->name('sitemap');
 

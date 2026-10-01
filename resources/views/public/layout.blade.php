@@ -78,7 +78,7 @@
             <a href="/#how">How it works</a>
             <a href="/#lookbook">Lookbook</a>
             <a href="{{ route('directory') }}">Find a tailor</a>
-            <a href="/#join">Join</a>
+            <a href="{{ $appUrl }}/join">Join</a>
             {{-- The way into the app. The public site had none: a tailor who
                  already had an account could only reach it by typing the
                  address. --}}
@@ -125,6 +125,7 @@
                     <li><a href="/#lookbook">Lookbook</a></li>
                     <li><a href="{{ route('directory') }}">Find a tailor</a></li>
                     <li><a href="/#how">How it works</a></li>
+                    <li><a href="{{ route('about') }}">About us</a></li>
                 </ul>
             </div>
 
@@ -142,6 +143,7 @@
                      Settings, tap to call or to WhatsApp. It used to be a domain
                      name and a country. --}}
                 <ul>
+                    <li><a href="{{ route('contact') }}">Contact us</a></li>
                     @if ($supportPhone)
                         <li><a href="tel:{{ $supportPhone }}">Call {{ $supportPhone }}</a></li>
                         <li><a href="{{ $supportWhatsapp }}" rel="noopener">WhatsApp us</a></li>

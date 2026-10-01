@@ -80,6 +80,9 @@ class HomePageTest extends TestCase
             ->assertOk()
             ->assertSee('https://app.example.test/sign-in', false)
             ->assertSee('https://app.example.test/join?as=tailor', false)
+            // The nav's "Join" opens the join page itself, not an anchor.
+            ->assertSee('href="https://app.example.test/join"', false)
+            ->assertDontSee('href="/#join"', false)
             // "Find a tailor" goes to the real directory, not to an anchor.
             ->assertSee(route('directory'), false);
     }

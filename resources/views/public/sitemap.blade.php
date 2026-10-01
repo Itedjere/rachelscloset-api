@@ -11,6 +11,16 @@
         <priority>0.9</priority>
     </url>
     <url>
+        <loc>{{ route('about') }}</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>{{ route('contact') }}</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
         <loc>{{ route('privacy') }}</loc>
         <changefreq>monthly</changefreq>
         <priority>0.3</priority>

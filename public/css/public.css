@@ -3439,3 +3439,367 @@
     transform: none;
   }
 }
+
+/* ===========================================================================
+   About us and Contact us
+
+   Both open on the Fashion House's dark masthead, so the public site reads
+   as one house rather than a set of templates. Prefixes: `page-`, plus a
+   few names for the blocks only these pages use.
+   =========================================================================== */
+
+.page-masthead {
+  padding-bottom: clamp(3rem, 9vh, 5.5rem);
+}
+
+.page-masthead__lead {
+  max-width: 52ch;
+  margin: 0;
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  color: rgba(252, 250, 255, 0.8);
+}
+
+.page-em {
+  font-style: italic;
+  color: var(--champagne-soft);
+}
+
+.page-cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-3);
+  margin-top: var(--s-8);
+}
+
+/* ---- About: three pillars ------------------------------------------------- */
+
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2.4vw, 1.75rem);
+}
+
+.pillar {
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  transition:
+    transform var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+.pillar:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+}
+
+.pillar__icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: var(--s-5);
+  border-radius: 18px;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+}
+
+.pillar__icon--gold {
+  background: var(--champagne-tint);
+  color: var(--champagne);
+}
+
+.pillar h3 {
+  margin-bottom: var(--s-3);
+}
+
+.pillar p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* ---- About: the rules, numbered like a house's articles --------------------- */
+
+.beliefs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(2rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 3rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: belief;
+}
+
+.beliefs li {
+  position: relative;
+  padding-top: var(--s-6);
+  border-top: 1px solid var(--line-strong);
+  counter-increment: belief;
+}
+
+.beliefs li::before {
+  content: "0" counter(belief);
+  display: block;
+  margin-bottom: var(--s-3);
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-style: italic;
+  line-height: 1;
+  color: var(--champagne);
+}
+
+.beliefs h3 {
+  margin-bottom: var(--s-2);
+}
+
+.beliefs p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* ---- Contact: the two ways in ----------------------------------------------- */
+
+.contact-ways {
+  margin-top: calc(-1 * clamp(2rem, 6vh, 3.5rem));
+  padding-top: 0;
+}
+
+.contact-cards {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+}
+
+.contact-cards:has(> :only-child) {
+  grid-template-columns: minmax(0, 560px);
+}
+
+.contact-card {
+  display: grid;
+  gap: var(--s-2);
+  padding: clamp(1.75rem, 3.5vw, 2.75rem);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  transition:
+    transform var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    border-color var(--dur-fast);
+}
+
+a.contact-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--lilac);
+  box-shadow: var(--shadow-lift);
+}
+
+.contact-card__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--s-3);
+  border-radius: 20px;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+}
+
+.contact-card--wa .contact-card__icon {
+  background: rgba(37, 211, 102, 0.12);
+  color: #1f9d55;
+}
+
+[data-theme="dark"] .contact-card--wa .contact-card__icon {
+  color: #4ade80;
+}
+
+.contact-card__label {
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* The number is the loudest thing on the page: it is the whole answer. */
+.contact-card__value {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4.2vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.contact-card__cta {
+  margin-top: var(--s-2);
+  color: var(--lilac);
+  font-weight: 600;
+}
+
+.contact-card--quiet .contact-card__value {
+  font-size: var(--fs-h3);
+}
+
+.contact-card--quiet .contact-card__cta {
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+
+.contact-note {
+  margin: var(--s-5) 0 0;
+  color: var(--ink-mute);
+  font-size: var(--fs-small);
+}
+
+/* ---- Contact: what is it about ------------------------------------------------- */
+
+.routes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.route {
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-6);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.route__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--s-4);
+  border-radius: 14px;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+}
+
+.route h3 {
+  margin-bottom: var(--s-2);
+  font-size: 1.2rem;
+}
+
+.route p {
+  flex: 1;
+  margin: 0 0 var(--s-4);
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.route__link {
+  color: var(--lilac);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.route__link:hover {
+  text-decoration: underline;
+}
+
+/* ---- Contact: questions -------------------------------------------------------- */
+
+.faq {
+  border-top: 1px solid var(--line);
+}
+
+.faq details {
+  border-bottom: 1px solid var(--line);
+}
+
+.faq summary {
+  position: relative;
+  display: block;
+  padding: var(--s-5) var(--s-12) var(--s-5) 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A plus that turns into a minus -- the open state, without reading. */
+.faq summary::after {
+  content: "+";
+  position: absolute;
+  top: 50%;
+  right: var(--s-2);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-top: -16px;
+  border-radius: 50%;
+  background: var(--lilac-tint);
+  color: var(--lilac);
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.faq details[open] summary::after {
+  content: "\2212";
+}
+
+.faq summary:focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 2px;
+}
+
+.faq details p {
+  margin: 0 0 var(--s-5);
+  color: var(--ink-soft);
+}
+
+/* ---- Narrower screens ------------------------------------------------------------- */
+
+@media (max-width: 960px) {
+  .pillars,
+  .routes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .beliefs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pillars,
+  .routes,
+  .beliefs,
+  .contact-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-cta__actions .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pillar,
+  .contact-card {
+    transition: none;
+  }
+
+  .pillar:hover,
+  a.contact-card:hover {
+    transform: none;
+  }
+}
