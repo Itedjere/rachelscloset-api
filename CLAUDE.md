@@ -616,6 +616,38 @@ has is added on the spot — see "Adding a customer from the shop floor".
   has been released — taking money back from the customer after paying the
   tailor means the platform pays twice. That is a conversation, not a button.
 
+### A tailor's customers, the promised date, and errors beside their buttons
+
+- **`GET /api/customers` — her own customers only**: people with a
+  non-cancelled order from her, most recent first, with order counts and
+  whether she can open their measurements (asked of `MeasurementAccess`, so
+  the button never leads to "not found"). This is a deliberate, narrow
+  exception to "never a search": that rule stops a tailor building a
+  directory of OTHER people's clients, and nobody she has not sewn for can
+  appear here. "New order" links to `/orders/new?phone=…`, which looks her up
+  on arrival. `User::customerOrders()` was added for it (a relation, not a
+  schema change). **Paged (20) and searched on the server** — a search that
+  filtered only the page on screen would miss everybody on page two. `?q=`
+  matches a name, or 3+ digits of a phone anywhere in it (the last four are
+  what people remember); safe only because it runs INSIDE "has an order from
+  her". The page waits 300ms after typing and lets only the newest reply land.
+  `Pager` (previous / "Page 2 of 5" / next, hidden for one page) is the first
+  page control in the app and is meant for the other lists too.
+- **`due_date` is required** and cannot be in the past. It is the date she
+  promises the clothes ready ("Promised for" to the customer), and "promised
+  a date and had not started" is the brief's first problem — a promise she
+  may leave blank is not one anybody can hold her to.
+- **Every error caused by a button shows beside that button**
+  (`ActionProblem`, which also scrolls itself into view if it lands just
+  off-screen). Errors used to sit at the top of each page, so on a phone a
+  form simply seemed not to submit. Page-level LOAD failures stay at the top —
+  no button was pressed. Where one page has many actions (the order page has
+  seven), the failure is keyed to the action or the row; where a confirmation
+  box stays open on failure (cancel order, clear notifications, pause an
+  account, remove a photo) the reason shows inside the box, not behind it.
+  Three actions had no error handling at all and now do: deleting a
+  measurement set, reordering the gallery, retiring a library step.
+
 ### Direct orders — paid by hand, recorded by the tailor
 
 `DirectPaymentController`, `DirectPaymentRecorded`, `payments.provider`
@@ -781,6 +813,14 @@ thing that happens is somebody telephoning her.
   /orders/{order}/collected` now takes `posted`, and sets `received_at` to
   `now()` when she handed it over: a customer standing in the shop has the
   garment the moment it is tapped.
+- **Only while the order is `collected`, never once it is `completed`.**
+  "Yes, I am happy" completes the order and releases the money; after that a
+  complaint is between the two of them. The rule used to accept `completed`
+  too, so when the release was still pending (a tailor with no bank details)
+  the button came straight back on an order she had just signed off. Applies
+  to every road into `completed` — her confirmation, the tailor's release
+  after the waiting period, an admin's settlement — and to an admin opening
+  one on her behalf. The order page re-asks on every status change.
 - **Only on an order whose money Rachel's Closet holds.** A direct order was
   paid to the tailor herself, so there is nothing to freeze, refund or
   release, and the card's promise ("the money stays with Rachel's Closet")
@@ -1335,7 +1375,19 @@ editor with arrows, and a seeded starting library of 10 Nigerian garments and
   drag near an edge scrolls too. It commits through the same whole-array PUT.
 - **Retire, never delete.** `restrictOnDelete` on the template item's step
   makes the database enforce it. A retired step cannot be added to anything new
-  but stays put where it already is.
+  but stays put where it already is. Garments follow the same rule: Rename,
+  Retire / Bring back and "Show retired" on the Garments screen (the API had
+  them since Section 7; the screen never did). **A rename shows on existing
+  orders** — unlike stages, the garment's name is not snapshotted onto an
+  order — and the rename form says so.
+- **Voice notes are recorded where the stages are looked at.** An admin on a
+  garment's stage page can record or change each stage's recording, and make
+  a brand-new stage that is added to that garment in one go (`StepForm`,
+  shared with the step library). The recording belongs to the library stage,
+  so it plays on every garment that uses it, and the form says that too.
+- **Admins have no "Orders".** That list is "orders I am on", and an admin is
+  on none, so it was always empty; the link is gone and `/orders` redirects
+  her to All orders.
 - **The schema cannot express "one default per garment type"** — MySQL allows
   any number of rows where part of a unique key is NULL. It is enforced in
   `StepTemplate::defaultFor()`, the only thing that creates one, and the
