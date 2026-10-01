@@ -1529,10 +1529,17 @@ and `will-change` of those do the same thing.
 The landing page used to have no door: every "Join" led back to its own
 section, there was no "Sign in", and the app had no sign-up page at all.
 
-- **`/join` in the app** — she chooses "I sew" or "I want clothes made" first,
-  then sees only the fields that choice needs; `?as=tailor` arrives from the
-  public site. Signed in on success. "Sign in" is a pill in the public header,
-  and "Join the house" opens `/join?as=tailor`. Public pages get the app's
+- **`/join` in the app, one question per screen**: "I sew" or "I want
+  clothes made"; then "About you" (name, phone); then, for a tailor only,
+  "Your shop"; then the six secret numbers — four steps for a tailor, three
+  for a customer, each one boxed group with Back and Next. A long form is
+  read top to bottom before anybody starts it, which is the reading this
+  platform avoids asking for. Enter means Next; going back keeps what was
+  typed. The server judges the whole form at the end, so an error is mapped
+  to the step that owns the field (a phone already in use takes her back to
+  "About you", with the reason beside the box). `?as=tailor` starts her on
+  step two. Signed in on success. The public nav's "Join" opens `/join`;
+  "Join the house" opens `/join?as=tailor`; "Sign in" is a pill. Public pages get the app's
   address as `$appUrl` (a view composer in `AppServiceProvider`).
 - **A tailor's state is required and must be one of `NigerianStates::ALL`**,
   the list the directory filters on and `/api/config` serves to the form.
@@ -1555,6 +1562,26 @@ section, there was no "Sign in", and the app had no sign-up page at all.
   through `LegalController`, so changing a setting changes the terms; a test
   pins that. Their "Last updated" date is fixed by hand. If the platform's
   behaviour changes, these pages change in the same commit.
+
+**`/about` and `/contact`** (`PagesController`), on the Fashion House's dark
+masthead so the public site reads as one house. Linked from the footer and
+in the sitemap.
+
+- **About says only what the code does.** No founding year, no founder's
+  anecdote: the "rules we built it by" are each a rule the platform keeps
+  (voice notes, no email, per-tailor consent, no commission, nothing held
+  hostage, the proof gate). The house is counted live through
+  `TailorRanking::listed()` — the directory's own gate — and the band is
+  hidden while nobody is listed, rather than showing zeroes.
+- **Contact is a phone number and a WhatsApp chat, not a form.** Nothing here
+  sends email, and the person who forgot her PIN cannot sign in to anything.
+  The number is `support_phone` from Settings; unset, the page says the help
+  line is being set up instead of showing an empty button. It also routes
+  the common questions to where they are fastest answered (forgot PIN, claim
+  code, joining, measurements) and has a `<details>` FAQ that needs no script.
+  **A contact form would need a table to keep messages in** — not built;
+  flag it first if wanted. Opening hours and an address are absent because
+  none are on record.
 
 **Still placeholder, and deliberately left so:** the photography (Pexels) and
 the testimonials. Quotes written for the page would be presented as somebody's
@@ -1589,6 +1616,30 @@ first page takes a 2×2 feature tile.
 - Two layout traps found on the way, both phone-only: in the stacked search a
   field's `flex-basis` became a 220px HEIGHT; and the live pill collided with
   the rating badge on a 160px card.
+
+**Her own page (`/t/{slug}`), redesigned to match.** The address on her
+printed card, so it carries the house's look rather than a form's:
+
+- **A dark house front**: her name set like a label (last word in italic
+  champagne), where she is, the live dot in words ("3 garments in the making
+  right now"), her rating, and up to three of her photographs as a spread
+  beside it — her initial on a seal when she has none, never a stock photo.
+- **WhatsApp opens with a sentence already typed**: "I found you on Rachels
+  Closet". It is the only way she learns the listing is bringing people in,
+  which is what she is paying for.
+- **A facts strip** shows only what is true (no row of zeroes for a
+  newcomer); **three steps** say the platform's promise about her.
+- **The lookbook is CSS columns**, so every photograph keeps its own shape and
+  nothing leaves a hole; one or two photographs become portrait tiles.
+- **Reviews lead with the summary**: the number, the stars, and bars counted
+  over EVERY published review, not the twenty listed. **Customers are named
+  by first name and initial** — she reviewed a tailor, she did not ask to be
+  findable by her full name on a public page.
+- **Never a dead end**: "More tailors in {state}" (the house when she is
+  alone in it), through `TailorRanking`, so the same gate. The card is
+  `partials/fh-card.blade.php`, shared with the directory.
+- **On a phone, a WhatsApp dock** slides in once the hero's button has
+  scrolled away, sticky inside the page body so it lets go above the footer.
 
 **`DemoFashionHouseSeeder` — 50 invented tailors, LOCAL ONLY.** It refuses to
 run outside `local`, is not called by `DatabaseSeeder`, and is run on purpose:
