@@ -115,6 +115,12 @@ class User extends Authenticatable
         );
     }
 
+    /** Orders where she is the customer. */
+    public function customerOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
+
     /** Her standing with the platform. Created on first sight, not at signup. */
     public function subscription(): HasOne
     {

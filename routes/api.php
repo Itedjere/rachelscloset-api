@@ -162,6 +162,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::post('/customers', [CustomerController::class, 'store'])
         ->middleware('throttle:10,1');
 
+    // Her own customers only -- people she has had an order with. Never a
+    // search of the user table; see CustomerController::index.
+    Route::get('/customers', [CustomerController::class, 'index']);
+
     /*
     | Measurements.
     |
