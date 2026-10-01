@@ -81,7 +81,19 @@ class OrderController extends Controller
             'amount' => ['required', 'numeric', 'min:1', 'max:99999999'],
             'deposit_amount' => ['nullable', 'numeric', 'min:0', 'lte:amount'],
             'escrow' => ['nullable', 'boolean'],
-            'due_date' => ['nullable', 'date', 'after_or_equal:today'],
+            /*
+             * Required. It is the date she promises the clothes will be
+             * ready, and "the tailor promised a date and had not started" is
+             * the first problem in the brief -- a promise she may leave out is
+             * not one the customer can hold her to.
+             */
+            'due_date' => ['required', 'date', 'after_or_equal:today'],
+        ], [
+            // Laravel's default reads "must be less than or equal to 10000" --
+            // a rule about a field, with the number unformatted.
+            'deposit_amount.lte' => 'The deposit cannot be more than the price.',
+            'due_date.required' => 'Choose the date you promise it will be ready.',
+            'due_date.after_or_equal' => 'That date has already passed.',
         ]);
 
         $order = Order::create($validated + [

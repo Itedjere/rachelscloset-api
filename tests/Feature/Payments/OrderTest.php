@@ -31,10 +31,12 @@ class OrderTest extends TestCase
             'garment_type_id' => $garment->id,
             'amount' => 25000,
             'description' => 'Blue lace, long sleeve',
+            'due_date' => now()->addWeeks(2)->toDateString(),
         ])
             ->assertCreated()
             ->assertJsonPath('data.status', Order::PENDING_PAYMENT)
-            ->assertJsonPath('data.amount', '25000.00');
+            ->assertJsonPath('data.amount', '25000.00')
+            ->assertJsonPath('data.due_date', now()->addWeeks(2)->toDateString());
     }
 
     /**
@@ -79,6 +81,7 @@ class OrderTest extends TestCase
             'customer_id' => $customer->id,
             'garment_type_id' => $garment->id,
             'amount' => 25000,
+            'due_date' => now()->addWeek()->toDateString(),
             'status' => Order::COMPLETED,
             'collected_at' => now()->toDateTimeString(),
         ])
@@ -98,6 +101,28 @@ class OrderTest extends TestCase
             'garment_type_id' => $garment->id,
             'amount' => 25000,
         ])->assertJsonValidationErrors('garment_type_id');
+    }
+
+    /**
+     * The date she promises it ready is required, and cannot already be gone.
+     * "Promised a date and had not started" is the first problem in the brief;
+     * a promise she can leave blank is not one the customer can hold her to.
+     */
+    public function test_the_promised_date_is_required_and_not_in_the_past(): void
+    {
+        $tailor = User::factory()->tailor()->create();
+        $customer = User::factory()->customer()->create();
+        $garment = GarmentType::factory()->create();
+
+        Sanctum::actingAs($tailor);
+
+        $body = ['customer_id' => $customer->id, 'garment_type_id' => $garment->id, 'amount' => 25000];
+
+        $this->postJson('/api/orders', $body)->assertJsonValidationErrors('due_date');
+        $this->postJson('/api/orders', $body + ['due_date' => now()->subDay()->toDateString()])
+            ->assertJsonValidationErrors('due_date');
+
+        $this->assertSame(0, Order::query()->count());
     }
 
     public function test_a_deposit_cannot_exceed_the_price(): void
