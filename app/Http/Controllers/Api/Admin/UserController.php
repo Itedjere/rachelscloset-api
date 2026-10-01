@@ -10,6 +10,7 @@ use App\Notifications\AccountReinstated;
 use App\Notifications\AccountSuspended;
 use App\Rules\NigerianPhone;
 use App\Services\Qr\QrCode;
+use App\Support\StoredFile;
 use App\Support\WhatsApp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -194,7 +195,7 @@ class UserController extends Controller
             'status' => $user->status,
             'suspended_until' => $user->suspended_until,
             'claimed' => $user->isClaimed(),
-            'avatar_url' => $user->avatar_url,
+            'avatar_url' => StoredFile::url($user->avatar_url),
             'business_name' => $user->tailorProfile?->business_name,
             'slug' => $user->tailorProfile?->slug,
             'created_at' => $user->created_at,

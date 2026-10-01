@@ -476,6 +476,50 @@ a customer taps after scanning a printed card — as well as both dispute
 contacts and the admin's reset link. `App\Support\WhatsApp::to()` is now the
 only way to build one, and `PinResetTest` had been asserting the broken form.
 
+### The tracker, redesigned — and a pass over the customer's side
+
+`OrderTracker.tsx` rebuilt; the old `.tracker-*` row styles are gone.
+
+- **A summary that answers "has she started?" in one glance**: a ring with
+  the count in it, "Now: {stage}", and **the date the last stage was
+  finished**. That date is the honest answer — a tracker silent for a week
+  says so instead of looking merely unfinished. Before payment it says what
+  happens once it is paid.
+- **One card per stage, on a line.** Finished: filled green tick, the date,
+  the photographs, and a solid green segment below. Current — the first gap,
+  even when later stages were ticked out of order: ringed, gently pulsing,
+  lit, with instructions and a "Now"/"Next" badge. Upcoming: dashed and
+  quiet, but **keeping its voice note**, because listening is how a stage is
+  understood. Instructions show only on the current stage; a future stage
+  gets no camera slot, which would invite a photo of work not started.
+- **The tailor gets "Mark as done" on the current card** as well as the
+  circle — the labelled button is what somebody new finds first. Three words,
+  `nowrap`: "I have finished this" wrapped onto three lines.
+- **Measured at a 310px viewport** (cheap Androids are ~320): the card was
+  left 175px, so the phone layout takes its room from gutters and never from
+  the 48px marks.
+- **No end cap.** A "Ready to collect" marker below the list duplicated the
+  stage most arrangements already end with.
+
+On the way through:
+
+- **Garments is closed to customers** at the route (`RoleRoute`) and on the
+  dashboard, not only in the sidebar. And server-side: `PUT`/`DELETE
+  /garment-types/{id}/steps` now require tailor or admin — before, a
+  customer's save created an arrangement owned by somebody who sews nothing.
+  Reading stays open; her tracker plays the same recordings.
+- **The sidebar has a Measurements section** for customers, before Account.
+- **Three endpoints returned a raw storage path as `avatar_url`** — the
+  consent screen (both row kinds), the admin People list and order reviews —
+  so those avatars were broken images. All go through `StoredFile::url` now,
+  pinned by `AvatarUrlTest`.
+- **`PinInput` dropped digits typed quickly.** Each box rebuilt the PIN from
+  the `value` of the last render, so two keystrokes before a re-render lost
+  one, and the focus handler shoved the caret back a box: six correct digits
+  became three and sign-in said "wrong PIN". It now reads a ref updated on
+  every keystroke. Found by the browser tool typing at machine speed;
+  verified the same way.
+
 ### Sections 4 and 5 — orders and the money spine — partly done
 
 `orders`, `payments`, `payouts`, `webhook_events`, bank columns on

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\TailorCustomerLink;
 use App\Services\Measurements\MeasurementAccess;
+use App\Support\StoredFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -53,7 +54,9 @@ class MeasurementAccessController extends Controller
                     'id' => $link->tailor?->id,
                     'name' => $link->tailor?->name,
                     'business_name' => $link->tailor?->tailorProfile?->business_name,
-                    'avatar_url' => $link->tailor?->avatar_url,
+                    // The routed URL, never the stored path: uploads live on
+                    // the private disk, so the bare path is a broken image.
+                    'avatar_url' => StoredFile::url($link->tailor?->avatar_url),
                 ],
                 'granted' => $link->isGranted(),
                 'granted_at' => $link->granted_at,
@@ -88,7 +91,7 @@ class MeasurementAccessController extends Controller
                     'id' => $order->tailor?->id,
                     'name' => $order->tailor?->name,
                     'business_name' => $order->tailor?->tailorProfile?->business_name,
-                    'avatar_url' => $order->tailor?->avatar_url,
+                    'avatar_url' => StoredFile::url($order->tailor?->avatar_url),
                 ],
                 'granted' => false,
                 'granted_at' => null,

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\ReviewReceived;
 use App\Services\Reviews\PublishReview;
 use App\Services\Reviews\RecalculateTailorRating;
+use App\Support\StoredFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -161,7 +162,7 @@ class ReviewController extends Controller
             'author' => [
                 'id' => $review->author?->id,
                 'name' => $review->author?->name,
-                'avatar_url' => $review->author?->avatar_url,
+                'avatar_url' => StoredFile::url($review->author?->avatar_url),
             ],
             'published_at' => $review->published_at,
             'created_at' => $review->created_at,
