@@ -323,4 +323,64 @@ class DirectoryTest extends TestCase
             ->assertSee('Disallow: /api/')
             ->assertSee('sitemap.xml');
     }
+
+    /* =====================================================================
+       Live: what is on her table right now
+       ===================================================================== */
+
+    private function liveOrder(User $tailor, string $status = Order::IN_PROGRESS): void
+    {
+        Order::factory()->create(['tailor_id' => $tailor->id])->forceFill(['status' => $status])->save();
+    }
+
+    /**
+     * Being made or ready to collect counts; waiting to be paid (no work
+     * bought yet) and collected (out of her hands) do not.
+     */
+    public function test_each_card_shows_what_is_in_the_making(): void
+    {
+        $busy = $this->tailor('Busy Bee Couture', 'Lagos');
+        $this->liveOrder($busy);
+        $this->liveOrder($busy, Order::READY);
+        $this->liveOrder($busy, Order::PENDING_PAYMENT);
+        $this->liveOrder($busy, Order::COLLECTED);
+
+        $this->tailor('Quiet Corner', 'Lagos');
+
+        $this->get('/tailors')
+            ->assertOk()
+            ->assertSee('2 in the making')
+            ->assertSee('Taking new work');
+
+        $counts = app(TailorRanking::class)->search(null, null)->getCollection()
+            ->pluck('live_orders_count', 'business_name');
+
+        $this->assertSame(2, (int) $counts['Busy Bee Couture']);
+        $this->assertSame(0, (int) $counts['Quiet Corner']);
+    }
+
+    /**
+     * The masthead's numbers describe the house a visitor can browse: a lapsed
+     * tailor and her orders are not counted, any more than she is listed.
+     */
+    public function test_the_house_totals_count_only_listed_tailors(): void
+    {
+        $listed = $this->tailor('Listed Lace', 'Lagos');
+        $this->liveOrder($listed);
+
+        $this->tailor('Second House', 'Kano');
+
+        $lapsed = $this->tailor('Lapsed Loom', 'Oyo');
+        Subscription::forTailor($lapsed)->forceFill([
+            'current_period_end' => now()->subDays(60),
+            'grace_ends_at' => now()->subDays(50),
+        ])->save();
+        $this->liveOrder($lapsed);
+        $this->liveOrder($lapsed);
+
+        $response = $this->get('/tailors')->assertOk();
+
+        $this->assertSame(['tailors' => 2, 'states' => 2, 'in_the_making' => 1], $response->viewData('house'));
+        $this->assertSame(['Kano' => 1, 'Lagos' => 1], $response->viewData('byState')->sortKeys()->all());
+    }
 }

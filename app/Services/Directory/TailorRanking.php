@@ -70,10 +70,19 @@ class TailorRanking
     /**
      * @return LengthAwarePaginator<int, TailorProfile>
      */
-    public function search(?string $state, ?string $term, int $perPage = 12): LengthAwarePaginator
+    /**
+     * Every tailor who may appear in the directory, with nothing ranked yet.
+     *
+     * Its own method so the listing and the directory's headline numbers
+     * ("50 tailors, 18 states, 87 garments being made") are counted over the
+     * SAME population -- a total that included lapsed or suspended tailors
+     * would advertise people a visitor cannot find.
+     *
+     * @return Builder<TailorProfile>
+     */
+    public function listed(): Builder
     {
-        $query = TailorProfile::query()
-            ->with('user')
+        return TailorProfile::query()
             ->whereHas('user', fn (Builder $user) => $user
                 ->where('role', User::ROLE_TAILOR)
                 ->where('status', User::STATUS_ACTIVE))
@@ -89,10 +98,23 @@ class TailorRanking
              * morning whether or not anything has run.
              */
             ->when($this->requiresSubscription(), fn (Builder $q) => $q
-                ->whereHas('user.subscription', fn (Builder $s) => $s->covering()))
+                ->whereHas('user.subscription', fn (Builder $s) => $s->covering()));
+    }
+
+    public function search(?string $state, ?string $term, int $perPage = 12): LengthAwarePaginator
+    {
+        $query = $this->listed()
+            ->with('user')
             ->withCount(['reviewsReceived as review_count' => fn ($q) => $q
                 ->where('status', Review::PUBLISHED)
-                ->where('direction', Review::CUSTOMER_TO_TAILOR)]);
+                ->where('direction', Review::CUSTOMER_TO_TAILOR)])
+            /*
+             * Garments on her table right now: being made, or finished and
+             * waiting to be collected. The directory shows it as a live dot --
+             * a busy tailor is evidence, and a quiet one is "taking new work".
+             * A count, never the orders: nothing about whose they are.
+             */
+            ->withCount(['liveOrders as live_orders_count']);
 
         if ($term) {
             // Business name only. A directory that searched bios would rank on

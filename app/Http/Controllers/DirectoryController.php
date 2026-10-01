@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\PlatformSetting;
 use App\Models\PortfolioItem;
 use App\Models\Review;
 use App\Models\TailorProfile;
 use App\Models\User;
 use App\Services\Directory\TailorRanking;
+use App\Support\NigerianStates;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -26,13 +28,7 @@ class DirectoryController extends Controller
     public function __construct(private readonly TailorRanking $ranking) {}
 
     /** Nigeria's states, for the filter. Distance is the problem to solve. */
-    public const STATES = [
-        'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue',
-        'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu',
-        'FCT', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi',
-        'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun',
-        'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
-    ];
+    public const STATES = NigerianStates::ALL;
 
     public function index(Request $request): View
     {
@@ -46,7 +42,32 @@ class DirectoryController extends Controller
             $state = null;
         }
 
-        $tailors = $this->ranking->search($state, $term);
+        // 24: divisible by the 4, 3 and 2 columns the grid uses, so a full
+        // page never ends on a ragged row.
+        $tailors = $this->ranking->search($state, $term, 24);
+
+        /*
+         * The masthead's numbers and the state chips, over EVERY listed
+         * tailor -- not the current search -- so they describe the house, and
+         * through the same gate as the listing, so nobody is counted who
+         * cannot be found.
+         */
+        $byState = $this->ranking->listed()
+            ->whereNotNull('state')
+            ->selectRaw('state, count(*) as tailors')
+            ->groupBy('state')
+            ->orderByDesc('tailors')
+            ->orderBy('state')
+            ->pluck('tailors', 'state');
+
+        $house = [
+            'tailors' => $this->ranking->listed()->count(),
+            'states' => $byState->count(),
+            'in_the_making' => Order::query()
+                ->whereIn('status', TailorProfile::LIVE_ORDER_STATUSES)
+                ->whereIn('tailor_id', $this->ranking->listed()->select('user_id'))
+                ->count(),
+        ];
 
         // One query for every gallery on the page rather than one per card.
         $covers = PortfolioItem::query()
@@ -63,6 +84,8 @@ class DirectoryController extends Controller
             'states' => self::STATES,
             'state' => $state,
             'term' => $term,
+            'byState' => $byState,
+            'house' => $house,
         ]);
     }
 

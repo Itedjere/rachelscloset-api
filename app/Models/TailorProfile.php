@@ -38,6 +38,20 @@ class TailorProfile extends Model
     }
 
     /**
+     * Garments on her table right now: paid for and being made, or finished
+     * and waiting to be collected. Not "waiting to be paid" -- no work has
+     * been bought yet -- and not collected, which has left her hands.
+     */
+    public function liveOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'tailor_id', 'user_id')
+            ->whereIn('status', self::LIVE_ORDER_STATUSES);
+    }
+
+    /** What "in the making" means on the directory. */
+    public const LIVE_ORDER_STATUSES = [Order::IN_PROGRESS, Order::READY];
+
+    /**
      * A unique, readable address for her public profile.
      *
      * Generated once when the profile is created and then left alone. The slug
