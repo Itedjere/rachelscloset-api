@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\ClaimController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\CustomerLookupController;
+use App\Http\Controllers\Api\DirectPaymentController;
 use App\Http\Controllers\Api\DisputeController;
 use App\Http\Controllers\Api\FileController;
 use App\Http\Controllers\Api\MeasurementAccessController;
@@ -278,6 +279,14 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
 
     Route::post('/orders/{order}/pay', [PaymentController::class, 'initialise']);
     Route::post('/payments/confirm', [PaymentController::class, 'confirm']);
+
+    /*
+    | A direct order: the tailor records money handed to her, since none of it
+    | passes through the platform. The customer is sent a receipt each time.
+    */
+    Route::post('/orders/{order}/direct-payments', [DirectPaymentController::class, 'store'])
+        ->middleware('throttle:20,1');
+    Route::delete('/orders/{order}/direct-payments/{payment}', [DirectPaymentController::class, 'destroy']);
 
     /*
     | The step library and arrangements.

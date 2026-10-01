@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Order;
+use App\Models\Payment;
 use App\Support\StoredFile;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -24,6 +25,24 @@ class OrderResource extends JsonResource
             'amount_due_up_front' => $this->amountDueUpFront(),
             'is_paid_up_front' => $this->isPaidUpFront(),
             'escrow' => $this->escrow,
+
+            /*
+             * What the tailor has recorded being handed, on a direct order.
+             * Both of them see the list: it is the customer's receipt and the
+             * tailor's way to take back a mistyped amount. Empty on escrow
+             * orders, whose payments went through the platform.
+             */
+            'direct_payments' => $this->escrow ? [] : $this->payments()
+                ->where('provider', Payment::PROVIDER_DIRECT)
+                ->where('status', Payment::SUCCESSFUL)
+                ->orderBy('paid_at')
+                ->get(['id', 'amount', 'paid_at'])
+                ->map(fn (Payment $payment) => [
+                    'id' => $payment->id,
+                    'amount' => (string) $payment->amount,
+                    'paid_at' => $payment->paid_at,
+                ])
+                ->all(),
 
             'due_date' => $this->due_date?->toDateString(),
             'ready_at' => $this->ready_at,

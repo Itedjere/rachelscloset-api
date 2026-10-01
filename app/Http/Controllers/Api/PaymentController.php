@@ -42,6 +42,19 @@ class PaymentController extends Controller
             'This order is not waiting for payment.',
         );
 
+        /*
+         * A direct order is paid to the tailor by hand. Charging it here took
+         * the money into the PLATFORM's Flutterwave account with no payout
+         * recorded -- the tailor was never paid, while the screen told both of
+         * them "paid straight to your tailor". She records it instead; see
+         * DirectPaymentController.
+         */
+        abort_if(
+            ! $order->isEscrow(),
+            422,
+            'Pay your tailor directly for this order. She will mark it as paid.',
+        );
+
         abort_unless($this->gateways->configured(), 503, 'Payments are not set up on this server.');
 
         $due = bcsub($order->amountDueUpFront(), $order->paidTotal(), 2);

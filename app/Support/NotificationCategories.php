@@ -77,7 +77,7 @@ class NotificationCategories
             ],
             self::MONEY => [
                 'label' => 'Money',
-                'hint' => 'Money paid back to you, and what was decided about a complaint',
+                'hint' => 'What your tailor marked as paid, money paid back to you, and what was decided about a complaint',
             ],
         ],
         User::ROLE_TAILOR => [
@@ -116,6 +116,8 @@ class NotificationCategories
         // Sections 5, 12, 14.
         'payout_released' => self::MONEY,
         'order_refunded' => self::MONEY,
+        // A customer's receipt for money handed to her tailor on a direct order.
+        'direct_payment_recorded' => self::MONEY,
         // A dispute is about somebody's money and her garment; it belongs
         // with the money rather than with progress updates.
         'order_disputed' => self::MONEY,

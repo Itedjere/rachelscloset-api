@@ -35,6 +35,16 @@ class RefundOrder
             /** @var Order $order */
             $order = Order::query()->whereKey($order->id)->lockForUpdate()->first();
 
+            /*
+             * Only money the platform holds can be given back by it. A direct
+             * order was paid to the tailor by hand; refunding it here would
+             * mean Rachel's Closet paying out of its own pocket for money it
+             * never received.
+             */
+            if (! $order->isEscrow()) {
+                throw new RuntimeException('This order was paid straight to the tailor. Rachel\'s Closet holds nothing to refund.');
+            }
+
             $paid = $order->paidTotal();
 
             if (bccomp($amount, $paid, 2) === 1) {

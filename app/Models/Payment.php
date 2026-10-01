@@ -25,6 +25,18 @@ class Payment extends Model
 
     public const FAILED = 'failed';
 
+    /**
+     * Handed to the tailor herself on a direct order -- cash, a transfer, a
+     * POS -- and recorded by her. Never touched the platform, so there is no
+     * gateway behind it to verify, refund or pay out.
+     */
+    public const PROVIDER_DIRECT = 'direct';
+
+    public function isDirect(): bool
+    {
+        return $this->provider === self::PROVIDER_DIRECT;
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {

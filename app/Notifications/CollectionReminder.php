@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Order;
+use App\Support\Naira;
 
 /**
  * Your clothes are finished and you have not come for them.
@@ -119,7 +120,7 @@ class CollectionReminder extends ClosetNotification
         $owed = bcsub((string) $this->order->amount, $this->order->paidTotal(), 2);
 
         if (bccomp($owed, '0', 2) === 1) {
-            $message .= ' There is ₦'.number_format((float) $owed, 2).' to pay when you collect.';
+            $message .= ' There is '.Naira::format($owed).' to pay when you collect.';
         }
 
         return $message;

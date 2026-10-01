@@ -303,7 +303,8 @@ class CollectionReminderTest extends TestCase
 
         $this->artisan('orders:remind-collection')->assertSuccessful();
 
-        $this->assertStringContainsString('15,000.00', $this->customerMessage());
+        // As the app shows it: whole naira, no ".00" (App\Support\Naira).
+        $this->assertStringContainsString('₦15,000 to pay', $this->customerMessage());
     }
 
     public function test_a_fully_paid_order_is_not_asked_for_money(): void

@@ -189,6 +189,12 @@ would read as "already told her it is overdue".
 `subscription_id` from birth so Section 14 needs no ALTER on a table holding
 real money. **`provider_reference` is unique**; that is the idempotency.
 
+`payments.provider` is `enum('flutterwave','direct')` — **flagged and agreed**
+when direct orders were fixed. A `direct` row is money the customer handed the
+tailor herself, recorded by the tailor; it never touched the platform, so no
+gateway stands behind it and nothing refunds or pays it out. See "Direct
+orders" in §7.
+
 `payouts` — one per order (unique `order_id`, so a double release is a
 constraint violation). No commission column.
 
@@ -610,6 +616,39 @@ has is added on the spot — see "Adding a customer from the shop floor".
   has been released — taking money back from the customer after paying the
   tailor means the platform pays twice. That is a conversation, not a button.
 
+### Direct orders — paid by hand, recorded by the tailor
+
+`DirectPaymentController`, `DirectPaymentRecorded`, `payments.provider`
+gains `direct`, `App\Support\Naira`. 12 new tests, 466 total.
+
+**THE BUG THIS FIXED, and it was a money bug.** A direct order ("paid straight
+to your tailor") could only leave `pending_payment` through the Pay button,
+which charged the customer through Flutterwave **into the platform's
+account** — and `ConfirmPayment` records no payout for a direct order. So the
+money sat with Rachel's Closet, nothing said it was owed, the tailor was never
+paid, and the screen told both of them it had gone straight to her. Found in
+local test data: three direct orders paid that way. A cash payment, meanwhile,
+had no way in at all, so the order could never start.
+
+- **A direct order never touches the platform.** No Pay button (and `/pay`
+  refuses it), no refund (`RefundOrder` refuses), no dispute (see Disputes).
+- **The tailor says "She has paid me"** and records the amount, as a `direct`
+  payment row — so "paid so far", "still owing" and the collection reminders
+  read one source. Once the deposit (or the price) is covered the order moves
+  to `in_progress`, the same step a confirmed gateway payment takes.
+- **The amount is chosen before it is typed**: "the deposit" and "everything
+  she still owes" are big tappable choices; typing is the fallback. Capped at
+  what is owed, under a lock, so a double tap cannot record it twice.
+- **Trusting her is safe in the direction that matters**: a false entry can
+  only hurt the tailor. And **the customer gets a receipt for every entry**
+  (`direct_payment_recorded`, MONEY) naming the amount and what is left, so a
+  wrong figure is caught when it is written, not at the counter.
+- **A mistaken entry can be removed until the order is completed**, and the
+  order is NOT moved back — the cloth may already be cut.
+- **Messages now name money as the app shows it**: `Naira::format` gives
+  "₦20,000", with kobo only when there are any. The collection reminder used
+  to say "₦15,000.00".
+
 ### The admin order screens
 
 `Admin\OrderController` (list, search, detail) and the refund UI. 8 more tests,
@@ -742,6 +781,12 @@ thing that happens is somebody telephoning her.
   /orders/{order}/collected` now takes `posted`, and sets `received_at` to
   `now()` when she handed it over: a customer standing in the shop has the
   garment the moment it is tapped.
+- **Only on an order whose money Rachel's Closet holds.** A direct order was
+  paid to the tailor herself, so there is nothing to freeze, refund or
+  release, and the card's promise ("the money stays with Rachel's Closet")
+  would be false. This was missed at first: a direct order has no payout row,
+  so the "already paid out?" check always said no and the button showed.
+  Refused for the customer and for an admin opening one on her behalf.
 - **Only the customer may raise one, and only once she has the garment.** A
   garment still being made is a conversation with the tailor, and the tracker
   is what that conversation is for. Admins can raise one *on her behalf* after
