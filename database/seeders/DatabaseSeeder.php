@@ -17,6 +17,21 @@ class DatabaseSeeder extends Seeder
         $this->call(PlatformSettingSeeder::class);
         $this->call(StepLibrarySeeder::class);
 
+        /*
+         * THE DEMO ACCOUNTS NEVER LEAVE A DEVELOPER'S MACHINE.
+         *
+         * Their PIN is written in CLAUDE.md and in this file, so on a live
+         * server they would be an admin account anybody could sign into.
+         * Outside `local` this seeder stops at the two seeders above, which
+         * are the only rows a live database needs; the real admin is made
+         * with `php artisan admin:create`, whose PIN nobody else has seen.
+         */
+        if (! app()->environment('local')) {
+            $this->command?->warn('Not local: demo accounts skipped. Run `php artisan admin:create` for the admin.');
+
+            return;
+        }
+
         // Admins cannot sign themselves up, so one has to be seeded.
         User::firstOrCreate(
             ['phone' => '08030000001'],
