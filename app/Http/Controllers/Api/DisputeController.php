@@ -50,9 +50,12 @@ class DisputeController extends Controller
         abort_unless(
             $this->canRaise($customer, $order),
             422,
-            $order->hasOpenDispute()
-                ? 'You have already told us about this order. We will call you.'
-                : 'You can tell us about a problem once you have the garment.',
+            match (true) {
+                $order->hasOpenDispute() => 'You have already told us about this order. We will call you.',
+                ! $order->isEscrow() => 'This order was paid straight to your tailor, so Rachel\'s Closet '
+                    .'cannot hold or return the money. Please speak to your tailor.',
+                default => 'You can tell us about a problem once you have the garment.',
+            },
         );
 
         $validated = $request->validate([
@@ -99,6 +102,21 @@ class DisputeController extends Controller
         }
 
         if ($order->hasOpenDispute()) {
+            return false;
+        }
+
+        /*
+         * Only an order whose money Rachel's Closet holds.
+         *
+         * A dispute here is a freeze on that money followed by two phone
+         * calls. On a direct order the customer paid the tailor herself, so
+         * there is nothing to freeze and nothing the platform can refund or
+         * release -- offering the button would promise "the money stays
+         * with Rachel's Closet" about money it never had. This was a real
+         * hole: a direct order has no payout row, so the paid-out check
+         * below always answered "not yet" and the button showed.
+         */
+        if (! $order->isEscrow()) {
             return false;
         }
 

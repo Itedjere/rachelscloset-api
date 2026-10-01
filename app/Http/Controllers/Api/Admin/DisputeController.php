@@ -65,6 +65,13 @@ class DisputeController extends Controller
     {
         abort_if($order->hasOpenDispute(), 422, 'This order already has an open dispute.');
 
+        // Same rule as the customer's button: no held money, nothing to settle.
+        abort_unless(
+            $order->isEscrow(),
+            422,
+            'This order was paid straight to the tailor. Rachel\'s Closet holds no money on it to settle.',
+        );
+
         $validated = $request->validate([
             'reason' => ['required', 'string', 'min:4', 'max:2000'],
         ]);

@@ -350,6 +350,53 @@ class DisputeTest extends TestCase
         $this->assertFalse($order->fresh()->payout->isReleased());
     }
 
+    /**
+     * A direct order was paid to the tailor herself, so Rachel's Closet
+     * holds nothing to freeze, refund or release -- and offering the button
+     * would promise exactly that. Before this, a direct order had no payout
+     * row, the "already paid out?" check always said no, and it showed.
+     */
+    public function test_a_direct_order_cannot_be_disputed(): void
+    {
+        $order = Order::factory()->create([
+            'customer_id' => $this->customer->id,
+            'tailor_id' => $this->tailor->id,
+            'escrow' => false,
+            'status' => Order::COLLECTED,
+            'collected_at' => now(),
+            'received_at' => now(),
+        ]);
+
+        Sanctum::actingAs($this->customer);
+
+        $this->getJson("/api/orders/{$order->id}/dispute")
+            ->assertOk()
+            ->assertJsonPath('can_raise', false);
+
+        $this->postJson("/api/orders/{$order->id}/dispute", ['reason' => 'The sleeves are too short.'])
+            ->assertStatus(422)
+            ->assertJsonPath('message', fn (string $message) => str_contains($message, 'paid straight to your tailor'));
+
+        // Nor on her behalf, after a phone call.
+        Sanctum::actingAs($this->admin);
+
+        $this->postJson("/api/admin/orders/{$order->id}/dispute", ['reason' => 'She rang about the sleeves.'])
+            ->assertStatus(422);
+
+        $this->assertSame(0, Dispute::query()->count());
+    }
+
+    /** The same order held in escrow still can be -- the rule is the money, not the order. */
+    public function test_an_escrow_order_still_can_be_disputed(): void
+    {
+        $order = $this->sentOrder();
+        $order->forceFill(['received_at' => now()])->save();
+
+        Sanctum::actingAs($this->customer);
+
+        $this->getJson("/api/orders/{$order->id}/dispute")->assertJsonPath('can_raise', true);
+    }
+
     /* =====================================================================
        Settling it
        ===================================================================== */
