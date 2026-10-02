@@ -1891,3 +1891,32 @@ app's (`public/.htaccess`, copied into `dist/`) forces https, sends every
 non-file address to `index.html` so a refresh on `/orders/12` is not a 404,
 serves the manifest with its real type, and never caches `index.html` or
 `sw.js` — a cached copy of either keeps a phone on the old app.
+
+### The live server, as it actually is (first install, 2 October 2026)
+
+- **cPanel on CloudLinux + LiteSpeed**, user `rachelsc`, `131.153.147.186`,
+  SSH on port 22. From the developer machine: `ssh rachelscloset` (an alias in
+  `~/.ssh/config` using the deploy-only key `~/.ssh/rachelscloset_deploy`,
+  authorized in cPanel → SSH Access; deauthorize it there to revoke).
+- **The server reads GitHub with a read-only deploy key**
+  (`~/.ssh/github_rachelscloset_api` on the server, added under the repo's
+  Settings → Deploy keys). It cannot push.
+- **`~/public_html` is a symlink to `rachelscloset-api/public`.** cPanel does
+  not let the account change the main domain's document root, so the old
+  folder was renamed `~/public_html.old` (it still holds a non-project PNG
+  and `index.html_`; the PNG is also copied into `public/` and excluded in
+  `.git/info/exclude`, so its old URL still works). If this ever causes
+  trouble, the clean fix is to ask the host to set the document root to
+  `/home/rachelsc/rachelscloset-api/public` and remove the symlink.
+- **The app lives in `~/app.rachelscloset.com.ng`**, outside `public_html`.
+- **PHP: `alt-php83`, NOT `ea-php83`.** CloudLinux ships two builds of 8.3
+  and only CloudLinux's has the MySQL driver here; `ea-php83` answered every
+  page with "could not find driver". `public/.htaccess` sets the handler in
+  cPanel's own format. `/usr/local/bin/php` on the command line is already
+  alt-php83 (the PHP Selector), so web, cron and artisan run the same PHP.
+  The server's default is 8.2, which is why the handler must be set at all.
+- **Database `rachelsc_closet`**, user of the same name, password generated
+  on the server and only ever in `.env` (mode 600).
+- **Cron**: `* * * * * cd /home/rachelsc/rachelscloset-api && /usr/local/bin/php artisan schedule:run`.
+- **Config is cached** (`deploy.sh` does it). After editing `.env` by hand,
+  run `php artisan config:cache` or the change is invisible.
