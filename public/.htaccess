@@ -43,8 +43,11 @@
 # Selector), so this also makes the web and `php artisan` the same PHP.
 #
 # Kept in cPanel's own format and markers: if MultiPHP Manager rewrites it,
-# it writes the same text and the checkout stays clean for deploy.sh.
-# Ignored by `php artisan serve`.
+# it writes the same text and the checkout stays clean for deploy.sh -- which
+# also needs MultiPHP itself set to alt-php83 for this domain (it is; see
+# CLAUDE.md), or cPanel writes ea-php83 back and every page fails.
+# Ignored by `php artisan serve`. The blank line below is cPanel's too.
+
 # php -- BEGIN cPanel-generated handler, do not edit
 # Set the “alt-php83” package as the default “PHP” programming language.
 <IfModule mime_module>

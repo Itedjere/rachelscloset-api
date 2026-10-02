@@ -1909,12 +1909,22 @@ serves the manifest with its real type, and never caches `index.html` or
   trouble, the clean fix is to ask the host to set the document root to
   `/home/rachelsc/rachelscloset-api/public` and remove the symlink.
 - **The app lives in `~/app.rachelscloset.com.ng`**, outside `public_html`.
+  This cPanel only allows a subdomain's document root INSIDE `public_html`,
+  so the subdomain still points at `public_html/app.rachelscloset.com.ng` and
+  that path is a symlink (in `public/`, excluded in `.git/info/exclude`) to
+  the real folder. The app's `.htaccess` redirects anything reaching it by
+  the main domain to `app.rachelscloset.com.ng`. cPanel recreates that
+  folder empty if the link goes missing — a 403 on the app means check it.
 - **PHP: `alt-php83`, NOT `ea-php83`.** CloudLinux ships two builds of 8.3
   and only CloudLinux's has the MySQL driver here; `ea-php83` answered every
   page with "could not find driver". `public/.htaccess` sets the handler in
   cPanel's own format. `/usr/local/bin/php` on the command line is already
   alt-php83 (the PHP Selector), so web, cron and artisan run the same PHP.
   The server's default is 8.2, which is why the handler must be set at all.
+  **MultiPHP Manager must say `alt-php83` for both domains** (set over SSH with
+  `uapi LangPHP php_set_vhost_versions`). It once said `ea-php83`, and cPanel
+  quietly rewrote the handler back to it the moment somebody opened the
+  Domains page — every page went 500. Never set it back to ea-php83.
 - **Database `rachelsc_closet`**, user of the same name, password generated
   on the server and only ever in `.env` (mode 600).
 - **Cron**: `* * * * * cd /home/rachelsc/rachelscloset-api && /usr/local/bin/php artisan schedule:run`.
