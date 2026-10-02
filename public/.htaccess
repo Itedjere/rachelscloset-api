@@ -32,3 +32,15 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# The PHP version, for cPanel + LiteSpeed. This server's default is 8.2 and
+# Laravel 13 needs 8.3; on the live host public_html IS this folder, so the
+# version has to be set here. Kept byte-for-byte in cPanel's own format and
+# markers: if MultiPHP Manager rewrites it, it writes the same text and the
+# checkout stays clean for deploy.sh. Ignored by `php artisan serve`.
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php83” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php83___lsphp .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit

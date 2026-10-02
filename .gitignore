@@ -25,3 +25,8 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+# Written into public/ on the live host, where it is the document root:
+# cPanel PHP settings and the SSL certificate challenge folder.
+/public/.user.ini
+/public/php.ini
+/public/.well-known
